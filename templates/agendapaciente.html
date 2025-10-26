@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Minha Agenda - Paciente</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='styledash.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    .content { padding: 20px; }
+    .box { background:#fff; padding:15px; border-radius:8px; box-shadow:0 0 5px rgba(0,0,0,.1); margin-bottom:20px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { border:1px solid #eee; padding:10px; text-align:left; }
+    th { background:#f5f5f5; }
+    .msg { margin:10px 0; }
+    .msg.ok { color:#0a74da; }
+    .msg.erro { color:#dc3545; }
+    .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; }
+    .grid > div:last-child { display:flex; align-items:end; }
+    .btn { border:none; padding:8px 12px; border-radius:6px; cursor:pointer; background:#0a74da; color:#fff; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo VidaPlus">
+    </div>
+    <nav class="menu">
+      <a class="active" href="#"><i class="fas fa-calendar-alt"></i></a>
+      <a href="#"><i class="fas fa-user"></i></a>
+      <div class="config">
+      <a href="config.html"><i class="fas fa-cog"></i></a>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <h2>Minha Agenda</h2>
+      <div class="icons"><i class="fas fa-bell"></i></div>
+    </header>
+
+    <section class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="msgwrap">
+            {% for cat, msg in messages %}
+              <div class="msg {{ cat }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="box">
+        <h3>Solicitar Consulta</h3>
+        <form method="POST" action="{{ url_for('solicitar_consulta') }}" class="grid">
+          <!-- Se não usa sessão, mandamos o CPF pelo hidden -->
+          <input type="hidden" name="paciente_cpf" value="{{ paciente_cpf }}">
+
+          <div>
+            <label>Médico (opcional)</label>
+            <select name="medico_cpf">
+              <option value="">Qualquer médico disponível</option>
+              {% for m in medicos %}
+              <option value="{{ m.CPF }}">{{ m.nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label>Data</label>
+            <input type="date" name="data" required>
+          </div>
+
+          <div>
+            <label>Hora</label>
+            <input type="time" name="hora" required>
+          </div>
+
+          <div>
+            <label>Tipo</label>
+            <input type="text" name="tipo" value="Consulta">
+          </div>
+
+          <div style="grid-column: span 3;">
+            <label>Observações</label>
+            <input type="text" name="observacoes" placeholder="Ex: dor de cabeça, retorno, etc.">
+          </div>
+
+          <div>
+            <button type="submit" class="btn"><i class="fas fa-paper-plane"></i> Enviar solicitação</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="box">
+        <h3>Minhas Consultas</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Hora</th>
+              <th>Médico</th>
+              <th>Tipo</th>
+              <th>Status</th>
+              <th>Obs.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in consultas %}
+            <tr>
+              <td>{{ c.data }}</td>
+              <td>{{ c.hora }}</td>
+              <td>{{ c.medico_nome if c.medico_nome else '—' }}</td>
+              <td>{{ c.tipo }}</td>
+              <td>{{ c.status.capitalize() }}</td>
+              <td>{{ c.observacoes }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">Você ainda não possui consultas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+    <!-- MENU DE CONFIGURAÇÕES -->
+  <div id="settingsMenu" class="settings-menu">
+    <ul>
+      <li><i class="fas fa-user"></i> Perfil</li>
+      <li><i class="fas fa-right-from-bracket"></i> <a href="{{ url_for('logout') }}">Sair</a></li>
+    </ul>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const configButton = document.querySelector(".config a");
+      const settingsMenu = document.getElementById("settingsMenu");
+
+      if (configButton && settingsMenu) {
+        configButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          settingsMenu.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!settingsMenu.contains(e.target) && !configButton.contains(e.target)) {
+            settingsMenu.classList.remove("active");
+          }
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>

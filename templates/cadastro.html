@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tela de Cadastro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="logo-area">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo VidaPlus" class="logo">
+        </div>
+        
+        <div class="cadastro-area">
+            <h2 style="text-align: center;">Cadastro</h2>
+            <h3>Crie sua conta</h3>
+            
+            <!-- Mantém o mesmo estilo, apenas ajustando o action -->
+            <form action="/cadastro" method="POST">
+                <label for="usuario">Nome:</label>
+                <input type="text" id="usuario" name="usuario" placeholder="Digite seu usuário" required>
+
+                <label for="CPF">CPF</label>
+                <input type="text" id="CPF" name="CPF" placeholder="000.000.000-00" required>
+
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required>
+
+                <button type="submit">Cadastrar</button>
+
+                <p style="margin-top: 25px; text-align: center;">Já tem uma conta?</p>
+                <p style="margin-top: 5px; text-align: center;">
+                    <a href="{{ url_for('index') }}">Entrar</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+      const cpfInput = document.getElementById('CPF');
+
+      cpfInput.addEventListener('input', () => {
+        let value = cpfInput.value.replace(/\D/g, ''); // remove tudo que não for número
+        if (value.length > 11) value = value.slice(0, 11); // limita a 11 dígitos
+
+        // Aplica a máscara 000.000.000-00
+        if (value.length > 9)
+          cpfInput.value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (value.length > 6)
+          cpfInput.value = value.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (value.length > 3)
+          cpfInput.value = value.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        else
+          cpfInput.value = value;
+      });
+  </script>
+</body>
+</html>

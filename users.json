@@ -1,0 +1,38 @@
+[
+    {
+        "nome": "Administrador",
+        "CPF": "00000000001",
+        "senha": "admin",
+        "tipo": "admin"
+    },
+    {
+        "nome": "Jonas",
+        "CPF": "1",
+        "senha": "1234",
+        "tipo": "paciente"
+    },
+    {
+        "nome": "Administrador",
+        "CPF": "1",
+        "senha": "admin123",
+        "tipo": "admin"
+    },
+    {
+        "nome": "Dr. Carlos Silva",
+        "CPF": "0002",
+        "senha": "medico123",
+        "tipo": "medico"
+    },
+    {
+        "nome": "Admin",
+        "CPF": "0001",
+        "senha": "admin123",
+        "tipo": "admin"
+    },
+    {
+        "nome": "teste",
+        "CPF": "12312312312",
+        "senha": "1234",
+        "tipo": "paciente"
+    }
+]

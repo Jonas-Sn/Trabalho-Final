@@ -1,0 +1,12 @@
+[
+    {
+        "id": 1,
+        "paciente_cpf": "12312312312",
+        "medico_cpf": "0002",
+        "data": "2025-10-23",
+        "hora": "10:00",
+        "tipo": "Consulta",
+        "status": "concluida",
+        "observacoes": "dor de cabeça"
+    }
+]

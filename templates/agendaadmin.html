@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Agenda - Administrador</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styledash.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #f4f6f9; font-family: Arial, sans-serif; }
+    .content { padding: 25px; }
+
+    .section-box {
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin-bottom: 25px;
+    }
+
+    h3 {
+      margin-bottom: 15px;
+      color: #333;
+      border-left: 4px solid #0a74da;
+      padding-left: 10px;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .filters input, .filters select {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .filters button {
+      background-color: #0a74da;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .filters button:hover {
+      background-color: #095caa;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+    }
+
+    th, td {
+      border: 1px solid #eee;
+      padding: 12px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f8f9fb;
+      color: #444;
+    }
+
+    .actions form { display: inline; }
+
+    .btn {
+      border: none;
+      border-radius: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .btn-approve { background-color: #28a745; color: #fff; }
+    .btn-cancel { background-color: #dc3545; color: #fff; }
+
+    .new-appointment input, .new-appointment select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .new-appointment button {
+      background-color: #0a74da;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="VidaPlus Logo">
+    </div>
+    <nav class="menu">
+      <a href="{{ url_for('clientesadmin') }}"><i class="fas fa-user"></i></a>
+      <a href="{{ url_for('agendaadmin') }}" class="active"><i class="fas fa-calendar-alt"></i></a>
+      <a href="{{ url_for('medicosadmin') }}"><i class="fas fa-user-md"></i></a>
+      <a href="#"><i class="fas fa-dollar-sign"></i></a>
+      <div class="config">
+      <a href="config.html"><i class="fas fa-cog"></i></a>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <h2>Agenda de Consultas</h2>
+      <div class="icons"><i class="fas fa-bell"></i></div>
+    </header>
+
+    <section class="content">
+
+      <!-- 🔍 FILTROS -->
+      <div class="section-box">
+        <h3>Buscar Consultas</h3>
+        <form method="GET" action="{{ url_for('agendaadmin') }}" class="filters">
+          <input type="text" name="busca_paciente" placeholder="Buscar paciente (nome ou CPF)" value="{{ request.args.get('busca_paciente', '') }}">
+          <input type="text" name="busca_medico" placeholder="Buscar médico (nome)" value="{{ request.args.get('busca_medico', '') }}">
+          <select name="status">
+            <option value="">Status</option>
+            <option value="solicitada">Solicitada</option>
+            <option value="agendada">Agendada</option>
+            <option value="cancelada" >Cancelada</option>
+          </select>
+          <button type="submit"><i class="fas fa-search"></i> Filtrar</button>
+        </form>
+      </div>
+
+      <!-- 📅 LISTAGEM -->
+      <div class="section-box">
+        <h3>Consultas</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Paciente</th>
+              <th>Médico</th>
+              <th>Data</th>
+              <th>Hora</th>
+              <th>Tipo</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in consultas %}
+              <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.paciente_nome }}</td>
+                <td>{{ c.medico_nome }}</td>
+                <td>{{ c.data }}</td>
+                <td>{{ c.hora }}</td>
+                <td>{{ c.tipo }}</td>
+                <td>{{ c.status.capitalize() }}</td>
+                <td class="actions">
+                {% if c.status == 'solicitada' %}
+                  <form action="{{ url_for('aprovar_consulta') }}" method="POST">
+                    <input type="hidden" name="id" value="{{ c.id }}">
+                    <button class="btn btn-approve" type="submit">Aprovar</button>
+                  </form>
+                {% endif %}
+
+                {% if c.status != 'cancelada' and c.status != 'concluida' %}
+                  <form action="{{ url_for('cancelar_consulta') }}" method="POST">
+                    <input type="hidden" name="id" value="{{ c.id }}">
+                    <button class="btn btn-cancel" type="submit">Cancelar</button>
+                  </form>
+                {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="8">Nenhuma consulta encontrada.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ➕ NOVA CONSULTA -->
+      <div class="section-box new-appointment">
+        <h3>Nova Consulta</h3>
+        <form method="POST" action="{{ url_for('agendaadmin') }}">
+          <input list="pacientes" name="paciente_cpf" placeholder="Nome ou CPF do Paciente" required>
+          <datalist id="pacientes">
+            {% for u in usuarios if u.tipo == 'paciente' %}
+              <option value="{{ u.CPF }}">{{ u.nome }} - {{ u.CPF }}</option>
+            {% endfor %}
+          </datalist>
+
+          <input list="medicos" name="medico_cpf" placeholder="Nome ou CPF do Médico" required>
+          <datalist id="medicos">
+            {% for u in usuarios if u.tipo == 'medico' %}
+              <option value="{{ u.CPF }}">{{ u.nome }} - {{ u.CPF }}</option>
+            {% endfor %}
+          </datalist>
+
+          <input type="date" name="data" required>
+          <input type="time" name="hora" required>
+          <input type="text" name="tipo" placeholder="Tipo de consulta (Ex: Retorno)">
+          <input type="text" name="observacoes" placeholder="Observações (opcional)">
+          <button type="submit"><i class="fas fa-plus"></i> Agendar</button>
+        </form>
+      </div>
+
+    </section>
+  </main>
+
+    <!-- MENU DE CONFIGURAÇÕES -->
+  <div id="settingsMenu" class="settings-menu">
+    <ul>
+      <li><i class="fas fa-user"></i> Perfil</li>
+      <li><i class="fas fa-right-from-bracket"></i> <a href="{{ url_for('logout') }}">Sair</a></li>
+    </ul>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const configButton = document.querySelector(".config a");
+      const settingsMenu = document.getElementById("settingsMenu");
+
+      if (configButton && settingsMenu) {
+        configButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          settingsMenu.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!settingsMenu.contains(e.target) && !configButton.contains(e.target)) {
+            settingsMenu.classList.remove("active");
+          }
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>
