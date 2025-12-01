@@ -595,7 +595,7 @@ def agendapaciente():
         paciente_cpf=paciente_cpf
     )
 
-    @app.route('/horarios_disponiveis')
+@app.route('/horarios_disponiveis')
 def horarios_disponiveis():
     db = get_db()
 
@@ -607,8 +607,7 @@ def horarios_disponiveis():
     if not data:
         return jsonify({"horarios": []})
 
-    # Se não veio médico, mas veio cargo, escolhe o mesmo médico
-    # que você já usa na lógica de solicitar_consulta (primeiro médico do cargo)
+    # Se não veio médico, mas veio cargo, tenta escolher um médico pelo cargo
     if not medico_cpf and cargo:
         cur = db.execute(
             "SELECT CPF FROM usuarios WHERE tipo = 'medico' AND cargo = ?",
@@ -631,7 +630,7 @@ def horarios_disponiveis():
     """, (medico_cpf, data))
     ocupados = {r["hora"] for r in cur.fetchall()}
 
-    # Grade padrão de horários (ajusta como quiser)
+    # Grade padrão de horários (ajuste como quiser)
     base_horarios = []
     for h in range(8, 18):  # 08h até 17h
         for m in (0, 30):   # de 30 em 30 min
@@ -641,6 +640,7 @@ def horarios_disponiveis():
     livres = [h for h in base_horarios if h not in ocupados]
 
     return jsonify({"horarios": livres})
+
 
 @app.route('/solicitar_consulta', methods=['POST'])
 def solicitar_consulta():
