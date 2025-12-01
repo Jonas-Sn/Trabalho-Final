@@ -595,6 +595,52 @@ def agendapaciente():
         paciente_cpf=paciente_cpf
     )
 
+    @app.route('/horarios_disponiveis')
+def horarios_disponiveis():
+    db = get_db()
+
+    data = request.args.get("data") or ""
+    medico_cpf = (request.args.get("medico_cpf") or "").replace(".", "").replace("-", "").strip()
+    cargo = (request.args.get("cargo") or "").strip()
+
+    # Se não tiver data, não tem o que fazer
+    if not data:
+        return jsonify({"horarios": []})
+
+    # Se não veio médico, mas veio cargo, escolhe o mesmo médico
+    # que você já usa na lógica de solicitar_consulta (primeiro médico do cargo)
+    if not medico_cpf and cargo:
+        cur = db.execute(
+            "SELECT CPF FROM usuarios WHERE tipo = 'medico' AND cargo = ?",
+            (cargo,)
+        )
+        row = cur.fetchone()
+        if row:
+            medico_cpf = row["CPF"]
+
+    # Se ainda assim não tem médico, devolve vazio
+    if not medico_cpf:
+        return jsonify({"horarios": []})
+
+    # Busca horários já ocupados para esse médico nessa data (exceto canceladas)
+    cur = db.execute("""
+        SELECT hora FROM consultas
+         WHERE medico_cpf = ?
+           AND data = ?
+           AND status != 'cancelada'
+    """, (medico_cpf, data))
+    ocupados = {r["hora"] for r in cur.fetchall()}
+
+    # Grade padrão de horários (ajusta como quiser)
+    base_horarios = []
+    for h in range(8, 18):  # 08h até 17h
+        for m in (0, 30):   # de 30 em 30 min
+            base_horarios.append(f"{h:02d}:{m:02d}")
+
+    # Filtra só horários livres
+    livres = [h for h in base_horarios if h not in ocupados]
+
+    return jsonify({"horarios": livres})
 
 @app.route('/solicitar_consulta', methods=['POST'])
 def solicitar_consulta():
@@ -686,6 +732,8 @@ def concluir_consulta():
     flash('Consulta marcada como concluída e registrada no histórico.', 'ok')
     adicionar_notificacao(c["paciente_cpf"], "Sua consulta foi concluída! Veja o resumo no histórico.")
     return redirect(url_for('agendamedico'))
+
+
 
 
 # ========== Logout ==========
