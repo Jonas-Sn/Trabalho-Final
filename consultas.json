@@ -1,0 +1,15 @@
+[
+    {
+        "id": 1,
+        "paciente_cpf": "00000000004",
+        "medico_cpf": "00000000003",
+        "data": "2025-11-24",
+        "hora": "09:00",
+        "tipo": "Consulta",
+        "status": "concluida",
+        "observacoes": "Teste",
+        "cargo": "Pediatra",
+        "resumo": "Paciente estava com febre e dor de garganta.",
+        "conclusao": "Verificado que a garganta estava inflamada, gerando dor e febre, repassada a receita para o ibuprofeno."
+    }
+]

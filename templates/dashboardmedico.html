@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VidaPlus - Painel</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styledash.css') }}">
+  <!-- Ícones (usando Font Awesome) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Barra lateral -->
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo VidaPlus" class="logo">
+    </div>
+    <nav class="menu">
+      <a href="clientes.html"><i class="fas fa-user"></i></a>
+      <a href="{{ url_for('agendamedico') }}"><i class="fas fa-calendar-alt"></i></a>
+      <a href="financeiro.html"><i class="fas fa-dollar-sign"></i></a>
+    </nav>
+    <div class="config">
+      <a href="config.html"><i class="fas fa-cog"></i></a>
+    </div>
+  </aside>
+
+  <!-- Conteúdo principal -->
+  <main class="main-content">
+    <!-- Barra superior -->
+    <header class="topbar">
+      <div class="search-area">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Buscar...">
+      </div>
+      <div class="icons">
+        <i class="fas fa-bell"></i>
+      </div>
+    </header>
+
+    <!-- Área central -->
+    <section class="content">
+      <h1>Olá, bem vindo!</h1>
+      <p>Escolha uma opção para começar...</p>
+    </section>
+  </main>
+
+  <!-- MENU DE CONFIGURAÇÕES -->
+  <div id="settingsMenu" class="settings-menu">
+    <ul>
+      <li><i class="fas fa-user"></i> Perfil</li>
+      <li><i class="fas fa-right-from-bracket"></i> <a href="{{ url_for('logout') }}">Sair</a></li>
+    </ul>
+  </div>
+
+  <script>
+  function abrirEdicao(cpf, nome, tipo) {
+    document.getElementById('cpf_original').value = cpf.replace(/\D/g, '');
+    document.getElementById('editar_nome').value = nome;
+    document.getElementById('editar_cpf').value = cpf.replace(/\D/g, '');
+    document.getElementById('editar_tipo').value = tipo.toLowerCase();
+    document.getElementById('editarModal').classList.add('active');
+  }
+
+  function fecharEdicao() {
+    document.getElementById('editarModal').classList.remove('active');
+  }
+
+    // Formata CPF automaticamente no campo
+  document.addEventListener("DOMContentLoaded", () => {
+    const cpfInput = document.getElementById('editar_cpf');
+
+    cpfInput.addEventListener('input', () => {
+      let value = cpfInput.value.replace(/\D/g, ''); // remove tudo que não é número
+      if (value.length > 11) value = value.substring(0, 15); // limita a 11 dígitos
+
+      // aplica a máscara 000.000.000-00 conforme o tamanho digitado
+      cpfInput.value = value
+        .replace(/^(\d{3})(\d)/, "$1.$2")
+        .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+        .replace(/\.(\d{3})(\d)/, ".$1-$2");
+    });
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+      const configButton = document.querySelector(".config a");
+      const settingsMenu = document.getElementById("settingsMenu");
+
+      if (configButton && settingsMenu) {
+        configButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          settingsMenu.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!settingsMenu.contains(e.target) && !configButton.contains(e.target)) {
+            settingsMenu.classList.remove("active");
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

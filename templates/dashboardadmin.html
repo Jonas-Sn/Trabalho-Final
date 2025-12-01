@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VidaPlus - Painel</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styledash.css') }}">
+  <!-- Ícones (usando Font Awesome) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Barra lateral -->
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo VidaPlus" class="logo">
+    </div>
+    <nav class="menu">
+      <a href="{{ url_for('clientesadmin') }}"><i class="fas fa-user"></i></a>
+      <a href="{{ url_for('agendaadmin') }}"><i class="fas fa-calendar-alt"></i></a>
+      <a href="{{ url_for('medicosadmin') }}"><i class="fas fa-user-md"></i></a>
+      <a href="financeiro.html"><i class="fas fa-dollar-sign"></i></a>
+      <div class="config">
+        <a href="config.html"><i class="fas fa-cog"></i></a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Conteúdo principal -->
+  <main class="main-content">
+    <!-- Barra superior -->
+    <header class="topbar">
+      <div class="search-area">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Buscar...">
+      </div>
+      <div class="icons">
+        <i class="fas fa-bell"></i>
+      </div>
+    </header>
+
+    <!-- Área central -->
+    <section class="content">
+      <h1>Olá, bem vindo!</h1>
+      <p>Escolha uma opção para começar...</p>
+    </section>
+  </main>
+
+  <!-- MENU DE CONFIGURAÇÕES -->
+  <div id="settingsMenu" class="settings-menu">
+    <ul>
+      <li><i class="fas fa-user"></i> Perfil</li>
+      <li><i class="fas fa-right-from-bracket"></i> <a href="{{ url_for('logout') }}">Sair</a></li>
+    </ul>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const configButton = document.querySelector(".config a");
+      const settingsMenu = document.getElementById("settingsMenu");
+
+      if (configButton && settingsMenu) {
+        configButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          settingsMenu.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!settingsMenu.contains(e.target) && !configButton.contains(e.target)) {
+            settingsMenu.classList.remove("active");
+          }
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>

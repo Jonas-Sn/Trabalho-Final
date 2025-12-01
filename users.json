@@ -1,0 +1,53 @@
+[
+  {
+    "nome": "Administrador",
+    "CPF": "00000000001",
+    "senha": "admin",
+    "tipo": "admin",
+    "cargo": "Administrador"
+  },
+  {
+    "nome": "Dr. Carlos Silva",
+    "CPF": "00000000002",
+    "senha": "medico123",
+    "tipo": "medico",
+    "cargo": "Clínico Geral"
+  },
+  {
+    "nome": "Sonia",
+    "CPF": "00000000003",
+    "senha": "medico123",
+    "tipo": "medico",
+    "cargo": "Pediatra"
+  },
+  {
+    "nome": "Evandro",
+    "CPF": "00000000005",
+    "senha": "medico123",
+    "tipo": "medico",
+    "cargo": "Nutricionista"
+  },
+  {
+    "nome": "Jonas",
+    "CPF": "00000000004",
+    "senha": "1",
+    "tipo": "paciente",
+    "notificacoes": [
+      {
+        "texto": "Sua consulta foi solicitada e aguarda aprovação.",
+        "lida": true,
+        "data": "2025-11-23 20:08"
+      },
+      {
+        "texto": "Sua consulta foi aprovada!",
+        "lida": true,
+        "data": "2025-11-23 20:09"
+      },
+      {
+        "texto": "Sua consulta foi concluída! Veja o resumo e a conclusão em sua agenda.",
+        "lida": true,
+        "data": "2025-11-23 20:10"
+      }
+    ]
+  }
+]

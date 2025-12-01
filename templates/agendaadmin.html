@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Agenda - Administrador</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styledash.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #f4f6f9; font-family: Arial, sans-serif; }
+    .content { padding: 25px; }
+
+    .section-box {
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin-bottom: 25px;
+    }
+
+    h3 {
+      margin-bottom: 15px;
+      color: #333;
+      border-left: 4px solid #0a74da;
+      padding-left: 10px;
+    }
+
+    /* Mensagens flash */
+    .msgwrap { margin-bottom: 15px; }
+    .msg { padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.9rem; }
+    .msg.ok { background:#e6f4ff; color:#0a74da; }
+    .msg.erro { background:#fde2e1; color:#b91c1c; }
+
+    /* Filtros */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .filters input, .filters select {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .filters button {
+      background-color: #0a74da;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filters button:hover {
+      background-color: #095caa;
+    }
+
+    /* Tabela */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+    }
+
+    th, td {
+      border: 1px solid #eee;
+      padding: 12px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f8f9fb;
+      color: #444;
+    }
+
+    .actions form { display: inline; }
+
+    .btn {
+      border: none;
+      border-radius: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-info    { background-color: #0a74da; color: #fff; }
+    .btn-approve { background-color: #28a745; color: #fff; }
+    .btn-cancel  { background-color: #dc3545; color: #fff; }
+
+    .btn-info:hover    { background-color: #0758a5; }
+    .btn-approve:hover { background-color: #1f7c34; }
+    .btn-cancel:hover  { background-color: #b02a37; }
+
+    .status-badge {
+      display:inline-block;
+      padding:3px 7px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:600;
+      text-transform:capitalize;
+    }
+    .status-badge.solicitada { background:#fff3cd; color:#92400e; }
+    .status-badge.agendada   { background:#e6f1ff; color:#1d4ed8; }
+    .status-badge.cancelada  { background:#f8d7da; color:#b91c1c; }
+    .status-badge.concluida  { background:#d4edda; color:#166534; }
+
+    .actions-group {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+
+    /* Form nova consulta */
+    .new-appointment form {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .new-appointment label {
+      font-size:0.9rem;
+      font-weight:600;
+    }
+
+    .new-appointment input,
+    .new-appointment select {
+      width:100%;
+      padding:10px;
+      border-radius:6px;
+      border:1px solid #ccc;
+      box-sizing:border-box;
+    }
+
+    .new-appointment button {
+      background-color: #0a74da;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 15px;
+      cursor: pointer;
+      margin-top:5px;
+      align-self:flex-start;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .new-appointment button:hover {
+      background-color:#095caa;
+    }
+
+    /* Modal MAIS INFORMAÇÕES */
+    .modal-overlay {
+      display:none;
+      position:fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background:rgba(0,0,0,0.5);
+      justify-content:center;
+      align-items:center;
+      z-index:999;
+    }
+
+    .modal-overlay.active {
+      display:flex;
+    }
+
+    .modal-box {
+      background:#fff;
+      border-radius:12px;
+      width:420px;
+      max-width:95%;
+      box-shadow:0 8px 20px rgba(0,0,0,0.18);
+      overflow:hidden;
+    }
+
+    .modal-header {
+      padding:12px 16px;
+      background:linear-gradient(90deg,#0a74da,#3b82f6);
+      color:#fff;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .modal-header h3 {
+      margin:0;
+      font-size:1.05rem;
+    }
+
+    .modal-body {
+      padding:14px 16px 16px;
+      font-size:0.9rem;
+    }
+
+    .modal-row {
+      margin-bottom:6px;
+    }
+
+    .modal-row strong {
+      display:inline-block;
+      min-width:90px;
+      color:#374151;
+    }
+
+    .modal-actions {
+      padding:10px 16px 14px;
+      text-align:right;
+      background:#f8f9fb;
+    }
+
+    .btn-close {
+      background:#6c757d;
+      color:#fff;
+      border:none;
+      padding:6px 12px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:13px;
+    }
+
+    .btn-close:hover {
+      background:#545b62;
+    }
+
+    .modal-body p {
+      margin:2px 0;
+    }
+
+    .modal-body .subtitle {
+      margin-top:8px;
+      font-weight:600;
+    }
+
+    .modal-body .empty {
+      color:#6b7280;
+      font-style:italic;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="VidaPlus Logo">
+    </div>
+    <nav class="menu">
+      <a href="{{ url_for('clientesadmin') }}"><i class="fas fa-user"></i></a>
+      <a href="{{ url_for('agendaadmin') }}" class="active"><i class="fas fa-calendar-alt"></i></a>
+      <a href="{{ url_for('medicosadmin') }}"><i class="fas fa-user-md"></i></a>
+      <a href="#"><i class="fas fa-dollar-sign"></i></a>
+      <div class="config">
+        <a href="config.html"><i class="fas fa-cog"></i></a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="topbar">
+      <h2>Agenda de Consultas</h2>
+      <div class="icons"><i class="fas fa-bell"></i></div>
+    </header>
+
+    <section class="content">
+
+      <!-- FLASH MESSAGES -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="msgwrap">
+            {% for cat, msg in messages %}
+              <div class="msg {{ cat }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- 🔍 FILTROS -->
+      <div class="section-box">
+        <h3>Buscar Consultas</h3>
+        <form method="GET" action="{{ url_for('agendaadmin') }}" class="filters">
+          <input type="text" name="busca_paciente"
+                 placeholder="Buscar paciente (nome ou CPF)"
+                 value="{{ request.args.get('busca_paciente', '') }}">
+          <input type="text" name="busca_medico"
+                 placeholder="Buscar médico (nome)"
+                 value="{{ request.args.get('busca_medico', '') }}">
+          <select name="status">
+            <option value="">Status</option>
+            <option value="solicitada">Solicitada</option>
+            <option value="agendada">Agendada</option>
+            <option value="cancelada">Cancelada</option>
+            <option value="concluida">Concluída</option>
+          </select>
+          <button type="submit">
+            <i class="fas fa-search"></i> Filtrar
+          </button>
+        </form>
+      </div>
+
+      <!-- 📅 LISTAGEM -->
+      <div class="section-box">
+        <h3>Consultas</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Paciente</th>
+              <th>Médico</th>
+              <th>Data</th>
+              <th>Hora</th>
+              <th>Tipo</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in consultas %}
+              <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.paciente_nome }}</td>
+                <td>{{ c.medico_nome }}</td>
+                <td>{{ c.data }}</td>
+                <td>{{ c.hora }}</td>
+                <td>{{ c.tipo }}</td>
+                <td>
+                  <span class="status-badge {{ c.status }}">
+                    {{ c.status }}
+                  </span>
+                </td>
+                <td class="actions">
+                  <div class="actions-group">
+                    <!-- Botão MAIS INFORMAÇÕES -->
+                    <button
+                      type="button"
+                      class="btn btn-info"
+                      onclick="abrirInfo(this)"
+                      data-id="{{ c.id }}"
+                      data-paciente="{{ c.paciente_nome }}"
+                      data-medico="{{ c.medico_nome }}"
+                      data-data="{{ c.data }}"
+                      data-hora="{{ c.hora }}"
+                      data-tipo="{{ c.tipo }}"
+                      data-status="{{ c.status }}"
+                      data-obs="{{ c.observacoes or '' }}"
+                      data-resumo="{{ c.resumo or '' }}"
+                      data-conclusao="{{ c.conclusao or '' }}"
+                    >
+                      <i class="fas fa-info-circle"></i> Info
+                    </button>
+
+                    {% if c.status == 'solicitada' %}
+                      <form action="{{ url_for('aprovar_consulta') }}" method="POST">
+                        <input type="hidden" name="id" value="{{ c.id }}">
+                        <button class="btn btn-approve" type="submit">
+                          <i class="fas fa-check"></i> Aprovar
+                        </button>
+                      </form>
+                    {% endif %}
+
+                    {% if c.status != 'cancelada' and c.status != 'concluida' %}
+                      <form action="{{ url_for('cancelar_consulta') }}" method="POST">
+                        <input type="hidden" name="id" value="{{ c.id }}">
+                        <button class="btn btn-cancel" type="submit">
+                          <i class="fas fa-times"></i> Cancelar
+                        </button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="8">Nenhuma consulta encontrada.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ➕ NOVA CONSULTA -->
+      <div class="section-box new-appointment">
+        <h3>Nova Consulta</h3>
+        <form method="POST" action="{{ url_for('agendaadmin') }}">
+          <!-- Paciente -->
+          <label for="paciente_cpf">Paciente</label>
+          <input list="pacientes" name="paciente_cpf" id="paciente_cpf"
+                 placeholder="Nome ou CPF do Paciente" required>
+          <datalist id="pacientes">
+            {% for u in usuarios if u.tipo == 'paciente' %}
+              <option value="{{ u.CPF }}">{{ u.nome }} - {{ u.CPF }}</option>
+            {% endfor %}
+          </datalist>
+
+          <!-- Cargo -->
+          <label for="cargo_admin">Cargo / Especialidade</label>
+          <select name="cargo" id="cargo_admin" required>
+            <option value="">Selecione o cargo...</option>
+            {% for cargo in cargos %}
+              <option value="{{ cargo }}">{{ cargo }}</option>
+            {% endfor %}
+          </select>
+
+          <!-- Médico -->
+          <label for="medico_admin">Médico</label>
+          <select name="medico_cpf" id="medico_admin" required>
+            <option value="">Selecione um médico...</option>
+            {% for m in medicos %}
+              <option value="{{ m.CPF }}" data-cargo="{{ m.cargo }}">
+                {{ m.nome }}{% if m.cargo %} - {{ m.cargo }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+
+          <!-- Data -->
+          <label for="data_admin">Data</label>
+          <input type="date" name="data" id="data_admin" required>
+
+          <!-- Hora -->
+          <label for="hora_admin">Hora</label>
+          <select name="hora" id="hora_admin" required>
+            <option value="">Selecione um horário...</option>
+            <!-- JS preenche com horários livres -->
+          </select>
+
+          <!-- Tipo -->
+          <label for="tipo">Tipo</label>
+          <input type="text" name="tipo" id="tipo" placeholder="Tipo de consulta (Ex: Retorno)">
+
+          <!-- Observações -->
+          <label for="observacoes">Observações</label>
+          <input type="text" name="observacoes" id="observacoes" placeholder="Observações (opcional)">
+
+          <button type="submit">
+            <i class="fas fa-plus"></i> Agendar
+          </button>
+        </form>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- MODAL MAIS INFORMAÇÕES -->
+  <div id="modalInfo" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Detalhes da consulta</h3>
+        <button class="btn-close" onclick="fecharInfo()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <strong>ID:</strong> <span id="infoId"></span>
+        </div>
+        <div class="modal-row">
+          <strong>Paciente:</strong> <span id="infoPaciente"></span>
+        </div>
+        <div class="modal-row">
+          <strong>Médico:</strong> <span id="infoMedico"></span>
+        </div>
+        <div class="modal-row">
+          <strong>Data:</strong> <span id="infoData"></span>
+        </div>
+        <div class="modal-row">
+          <strong>Hora:</strong> <span id="infoHora"></span>
+        </div>
+        <div class="modal-row">
+          <strong>Tipo:</strong> <span id="infoTipo"></span>
+        </div>
+        <div class="modal-row">
+          <strong>Status:</strong> <span id="infoStatus"></span>
+        </div>
+        <div class="modal-row">
+          <strong>Obs.:</strong> <span id="infoObs"></span>
+        </div>
+
+        <p class="subtitle">Resumo da consulta</p>
+        <p id="infoResumo" class="empty">Nenhum resumo registrado.</p>
+
+        <p class="subtitle">Conclusão do médico</p>
+        <p id="infoConclusao" class="empty">Nenhuma conclusão registrada.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-close" onclick="fecharInfo()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU DE CONFIGURAÇÕES -->
+  <div id="settingsMenu" class="settings-menu">
+    <ul>
+      <li><i class="fas fa-user"></i> Perfil</li>
+      <li><i class="fas fa-right-from-bracket"></i> <a href="{{ url_for('logout') }}">Sair</a></li>
+    </ul>
+  </div>
+
+  <script>
+    // Consultas em JSON para cálculo de horários livres
+    const consultasData = JSON.parse(`{{ consultas | tojson | safe }}`);
+
+    // ===== MODAL INFO =====
+    function abrirInfo(btn) {
+      const id        = btn.dataset.id || '';
+      const paciente  = btn.dataset.paciente || '';
+      const medico    = btn.dataset.medico || '';
+      const data      = btn.dataset.data || '';
+      const hora      = btn.dataset.hora || '';
+      const tipo      = btn.dataset.tipo || '';
+      const status    = btn.dataset.status || '';
+      const obs       = btn.dataset.obs || '';
+      const resumo    = btn.dataset.resumo || '';
+      const conclusao = btn.dataset.conclusao || '';
+
+      document.getElementById('infoId').textContent       = id;
+      document.getElementById('infoPaciente').textContent = paciente;
+      document.getElementById('infoMedico').textContent   = medico;
+      document.getElementById('infoData').textContent     = data;
+      document.getElementById('infoHora').textContent     = hora;
+      document.getElementById('infoTipo').textContent     = tipo || 'Consulta';
+      document.getElementById('infoStatus').textContent   = status;
+      document.getElementById('infoObs').textContent      = obs || '—';
+
+      const resumoElem    = document.getElementById('infoResumo');
+      const conclusaoElem = document.getElementById('infoConclusao');
+
+      if (resumo) {
+        resumoElem.textContent = resumo;
+        resumoElem.classList.remove('empty');
+      } else {
+        resumoElem.textContent = 'Nenhum resumo registrado.';
+        resumoElem.classList.add('empty');
+      }
+
+      if (conclusao) {
+        conclusaoElem.textContent = conclusao;
+        conclusaoElem.classList.remove('empty');
+      } else {
+        conclusaoElem.textContent = 'Nenhuma conclusão registrada.';
+        conclusaoElem.classList.add('empty');
+      }
+
+      document.getElementById('modalInfo').classList.add('active');
+    }
+
+    function fecharInfo() {
+      document.getElementById('modalInfo').classList.remove('active');
+    }
+
+    // ===== HORÁRIOS BASE (08-12 e 14-18, de 30 em 30) =====
+    function gerarHorariosBase() {
+      const slots = [];
+
+      const addRange = (startHour, endHour) => {
+        for (let h = startHour; h < endHour; h++) {
+          const hStr = String(h).padStart(2, '0');
+          slots.push(`${hStr}:00`);
+          slots.push(`${hStr}:30`);
+        }
+      };
+
+      addRange(8, 12);   // 08:00 até 11:30
+      addRange(14, 18);  // 14:00 até 17:30
+
+      return slots;
+    }
+
+    const horariosBase = gerarHorariosBase();
+
+    function atualizarHorariosAdmin() {
+      const medicoSelect = document.getElementById('medico_admin');
+      const dataInput    = document.getElementById('data_admin');
+      const horaSelect   = document.getElementById('hora_admin');
+
+      if (!medicoSelect || !dataInput || !horaSelect) return;
+
+      const medicoCpf = medicoSelect.value;
+      const data      = dataInput.value;
+
+      // Limpa e adiciona opção padrão
+      horaSelect.innerHTML = '';
+      const optPadrao = document.createElement('option');
+      optPadrao.value = '';
+      optPadrao.textContent = 'Selecione um horário...';
+      horaSelect.appendChild(optPadrao);
+
+      if (!medicoCpf || !data) return;
+
+      // horários já ocupados pra esse médico + data
+      const ocupados = new Set(
+        consultasData
+          .filter(c =>
+            c.medico_cpf === medicoCpf &&
+            c.data === data &&
+            c.status !== 'cancelada'
+          )
+          .map(c => c.hora)
+      );
+
+      horariosBase.forEach(h => {
+        if (!ocupados.has(h)) {
+          const opt = document.createElement('option');
+          opt.value = h;
+          opt.textContent = h;
+          horaSelect.appendChild(opt);
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Menu de configurações
+      const configButton = document.querySelector(".config a");
+      const settingsMenu = document.getElementById("settingsMenu");
+
+      if (configButton && settingsMenu) {
+        configButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          settingsMenu.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!settingsMenu.contains(e.target) && !configButton.contains(e.target)) {
+            settingsMenu.classList.remove("active");
+          }
+        });
+      }
+
+      // Cargo -> filtrar médicos
+      const cargoSelect  = document.getElementById('cargo_admin');
+      const medicoSelect = document.getElementById('medico_admin');
+      const dataInput    = document.getElementById('data_admin');
+
+      if (cargoSelect && medicoSelect) {
+        const todasOpcoesMedicos = Array.from(
+          medicoSelect.querySelectorAll('option[data-cargo]')
+        );
+
+        cargoSelect.addEventListener('change', () => {
+          const cargo = cargoSelect.value;
+
+          // limpa médicos
+          medicoSelect.innerHTML = '';
+          const optPadrao = document.createElement('option');
+          optPadrao.value = '';
+          optPadrao.textContent = 'Selecione um médico...';
+          medicoSelect.appendChild(optPadrao);
+
+          if (!cargo) {
+            atualizarHorariosAdmin();
+            return;
+          }
+
+          todasOpcoesMedicos.forEach(opt => {
+            if (opt.dataset.cargo === cargo) {
+              medicoSelect.appendChild(opt.cloneNode(true));
+            }
+          });
+
+          atualizarHorariosAdmin();
+        });
+
+        medicoSelect.addEventListener('change', atualizarHorariosAdmin);
+      }
+
+      if (dataInput) {
+        dataInput.addEventListener('change', atualizarHorariosAdmin);
+      }
+    });
+  </script>
+
+</body>
+</html>
