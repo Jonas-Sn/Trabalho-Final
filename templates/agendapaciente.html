@@ -163,6 +163,94 @@
         font-size:1rem;
       }
     }
+
+    /* ===== NOVO layout do formulário de solicitação (cards por passo) ===== */
+
+    .solicita-form {
+      max-width: 480px;
+      margin: 0 auto;              /* centraliza dentro da box */
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .step-card {
+      background: #f9fafb;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      padding: 10px 12px;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .step-number {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #0a74da;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .step-header h4 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .step-header p {
+      margin: 2px 0 0;
+      font-size: 0.78rem;
+      color: #555;
+    }
+
+    /* linha do botão */
+    .solicita-form .btn-row {
+      margin-top: 4px;
+    }
+
+    .solicita-form .btn {
+      width: 100%;
+      justify-content: center;
+      padding: 10px 14px;
+    }
+
+    /* Desktop: cards lado a lado e botão alinhado à direita */
+    @media (min-width: 769px) {
+      .solicita-form {
+        max-width: 900px;
+      }
+
+      .steps-container {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+
+      .step-card {
+        flex: 1;
+      }
+
+      .solicita-form .btn-row {
+        align-self: flex-end;
+        max-width: 240px;
+        width: 100%;
+      }
+    }
   </style>
 
 </head>
@@ -214,62 +302,96 @@
           4) Descreva o motivo da consulta.
         </p>
 
-        <form method="POST" action="{{ url_for('solicitar_consulta') }}" class="grid">
+        <form method="POST" action="{{ url_for('solicitar_consulta') }}" class="solicita-form">
           <!-- CPF do paciente (hidden, vindo da sessão/rota) -->
           <input type="hidden" name="paciente_cpf" value="{{ paciente_cpf }}">
 
-          <!-- CARGO / ESPECIALIDADE (OBRIGATÓRIO) -->
-          <div>
-            <label for="cargo">Cargo / Especialidade *</label>
-            <select name="cargo" id="cargo" required>
-              <option value="">Selecione o cargo...</option>
-              {% for cargo in cargos %}
-                <option value="{{ cargo }}">{{ cargo }}</option>
-              {% endfor %}
-            </select>
-            <small class="hint"></small>
+          <div class="steps-container">
+            <!-- PASSO 1: Profissional -->
+            <div class="step-card">
+              <div class="step-header">
+                <span class="step-number">1</span>
+                <div>
+                  <h4>Profissional</h4>
+                  <p>Escolha a especialidade e, se quiser, um médico específico.</p>
+                </div>
+              </div>
+
+              <div>
+                <label for="cargo">Cargo / Especialidade *</label>
+                <select name="cargo" id="cargo" required>
+                  <option value="">Selecione o cargo...</option>
+                  {% for cargo in cargos %}
+                    <option value="{{ cargo }}">{{ cargo }}</option>
+                  {% endfor %}
+                </select>
+                <small class="hint"></small>
+              </div>
+
+              <div style="margin-top:8px;">
+                <label for="medico_cpf">Médico (opcional)</label>
+                <select name="medico_cpf" id="medico_cpf">
+                  <option value="">Não escolher médico (atribuir automaticamente)</option>
+                  {% for m in medicos %}
+                    <option value="{{ m.CPF }}" data-cargo="{{ m.cargo }}">
+                      {{ m.nome }}{% if m.cargo %} - {{ m.cargo }}{% endif %}
+                    </option>
+                  {% endfor %}
+                </select>
+                <small class="hint"></small>
+              </div>
+            </div>
+
+            <!-- PASSO 2: Data e horário -->
+            <div class="step-card">
+              <div class="step-header">
+                <span class="step-number">2</span>
+                <div>
+                  <h4>Data e horário</h4>
+                  <p>Informe o dia e veja os horários disponíveis.</p>
+                </div>
+              </div>
+
+              <div>
+                <label>Data</label>
+                <input type="date" name="data" required>
+              </div>
+
+              <div style="margin-top:8px;">
+                <label>Hora</label>
+                <select name="hora" id="hora" required>
+                  <option value="">Selecione cargo, médico (opcional) e data</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- PASSO 3: Tipo e observações -->
+            <div class="step-card">
+              <div class="step-header">
+                <span class="step-number">3</span>
+                <div>
+                  <h4>Motivo da consulta</h4>
+                  <p>Tipo da consulta e breve descrição do motivo.</p>
+                </div>
+              </div>
+
+              <div>
+                <label>Tipo</label>
+                <select name="tipo">
+                  <option value="Consulta">Consulta</option>
+                  <option value="Retorno">Retorno</option>
+                </select>
+              </div>
+
+              <div style="margin-top:8px;">
+                <label>Observações</label>
+                <input type="text" name="observacoes" placeholder="Ex: dor de cabeça, retorno, etc.">
+              </div>
+            </div>
           </div>
 
-          <!-- MÉDICO (OPCIONAL) -->
-          <div>
-            <label for="medico_cpf">Médico (opcional)</label>
-            <select name="medico_cpf" id="medico_cpf">
-              <option value="">Não escolher médico (atribuir automaticamente)</option>
-              {% for m in medicos %}
-                <option value="{{ m.CPF }}" data-cargo="{{ m.cargo }}">
-                  {{ m.nome }}{% if m.cargo %} - {{ m.cargo }}{% endif %}
-                </option>
-              {% endfor %}
-            </select>
-            <small class="hint"></small>
-          </div>
-
-          <div>
-            <label>Data</label>
-            <input type="date" name="data" required>
-          </div>
-
-          <div>
-            <label>Hora</label>
-            <select name="hora" id="hora" required>
-              <option value="">Selecione cargo, médico (opcional) e data</option>
-            </select>
-          </div>
-
-          <div>
-            <label>Tipo</label>
-            <select name="tipo">
-              <option value="Consulta">Consulta</option>
-              <option value="Retorno">Retorno</option>
-            </select>
-          </div>
-
-          <div style="grid-column: span 3;">
-            <label>Observações</label>
-            <input type="text" name="observacoes" placeholder="Ex: dor de cabeça, retorno, etc.">
-          </div>
-
-          <div>
+          <!-- Botão -->
+          <div class="btn-row">
             <button type="submit" class="btn">
               <i class="fas fa-paper-plane"></i> Enviar solicitação
             </button>
