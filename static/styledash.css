@@ -177,54 +177,53 @@ body {
 
 @media (max-width: 768px) {
 
-  /* TIRA O FLEX DO BODY NO MOBILE */
+  /* body em COLUNA (sidebar em cima, conteúdo abaixo) */
   body {
-    display: block !important;
-    min-height: auto;
-    overflow-x: hidden;
+    flex-direction: column;
   }
 
-  /* Sidebar vira barra superior simples */
+  /* Sidebar: vira uma “faixa” no topo, com logo em cima e ícones embaixo */
   .sidebar {
-    position: static !important;
-    z-index: auto;
+    position: relative;
     width: 100%;
-    height: auto !important;
-    display: flex;
-    flex-direction: row;
+    height: auto;
+    padding: 10px 16px;
+    flex-direction: column;       /* logo em cima, menu embaixo */
     align-items: center;
-    justify-content: space-around;
-    padding: 10px 0;
+    justify-content: center;
+    gap: 6px;
   }
 
-  /* Menu em linha */
+  .sidebar .logo {
+    margin: 0;
+  }
+
+  .sidebar .logo img {
+    display: block;
+  }
+
+  /* Ícones em linha, centralizados */
   .sidebar .menu {
-    display: flex;
     flex-direction: row;
+    justify-content: center;
     align-items: center;
     gap: 16px;
+    width: 100%;
     height: auto;
-    justify-content: center;
   }
 
   .sidebar .config {
     margin-top: 0;
-    margin-left: 10px;
+    margin-left: 8px;
   }
 
-  /* Conteúdo vem logo abaixo da barra */
+  /* Conteúdo ocupa a tela inteira abaixo da barra */
   .main-content {
-    display: block;
     margin-left: 0 !important;
     width: 100%;
-    overflow-y: visible;
   }
 
-  .content {
-    padding: 10px;
-  }
-
-  /* Grids (formulários com várias colunas) viram 1 coluna */
+  /* Grids (formulários com várias colunas) viram uma coluna só */
   .grid {
     grid-template-columns: 1fr !important;
   }
@@ -238,8 +237,11 @@ body {
     -webkit-overflow-scrolling: touch;
   }
 
-  .box,
-  .section-box {
+  .content {
+    padding: 10px;
+  }
+
+  .box, .section-box {
     padding: 15px !important;
   }
 
@@ -247,11 +249,7 @@ body {
     font-size: 1.2rem;
   }
 
-  .btn,
-  button,
-  input,
-  select,
-  textarea {
+  .btn, button, input, select, textarea {
     font-size: 1rem !important;
   }
 
@@ -259,9 +257,7 @@ body {
     flex-direction: column;
   }
 
-  .filters input,
-  .filters select,
-  .filters button {
+  .filters input, .filters select, .filters button {
     width: 100% !important;
   }
 
