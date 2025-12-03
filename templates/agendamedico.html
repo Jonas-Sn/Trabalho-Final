@@ -271,12 +271,14 @@
           <tbody>
             {% for c in consultas %}
             <tr>
-              <td>{{ c.data }}</td>
-              <td>{{ c.hora }}</td>
-              <td>{{ c.paciente_nome }} ({{ c.paciente_cpf }})</td>
-              <td>{{ c.tipo }}</td>
-              <td><span class="status {{ c.status }}">{{ c.status }}</span></td>
-              <td>
+              <td data-label="Data">{{ c.data }}</td>
+              <td data-label="Hora">{{ c.hora }}</td>
+              <td data-label="Paciente">{{ c.paciente_nome }} ({{ c.paciente_cpf }})</td>
+              <td data-label="Tipo">{{ c.tipo }}</td>
+              <td data-label="Status">
+                <span class="status {{ c.status }}">{{ c.status }}</span>
+              </td>
+              <td data-label="Ações">
                 <div class="actions-group">
                   <!-- Botão INFO à ESQUERDA -->
                   <button
@@ -292,25 +294,25 @@
                     <i class="fas fa-info-circle"></i> Info
                   </button>
 
-  '                {% if c.status == 'agendada' %}
-                    <!-- Concluir -->
-                    <button
-                      type="button"
-                      class="btn btn-finish"
-                      data-id="{{ c.id }}"
-                      data-paciente="{{ c.paciente_nome }}"
-                      onclick="abrirModalConclusao(this)"
-                    >
-                      <i class="fas fa-check"></i> Concluir
-                    </button>
+                  {% if c.status == 'agendada' %}
+                  <!-- Concluir -->
+                  <button
+                    type="button"
+                    class="btn btn-finish"
+                    data-id="{{ c.id }}"
+                    data-paciente="{{ c.paciente_nome }}"
+                    onclick="abrirModalConclusao(this)"
+                  >
+                    <i class="fas fa-check"></i> Concluir
+                  </button>
 
-                    <!-- Cancelar -->
-                    <form action="{{ url_for('cancelar_consulta') }}" method="POST">
-                      <input type="hidden" name="id" value="{{ c.id }}">
-                      <button type="submit" class="btn btn-cancel">
-                        <i class="fas fa-times"></i> Cancelar
-                      </button>
-                    </form>
+                  <!-- Cancelar -->
+                  <form action="{{ url_for('cancelar_consulta') }}" method="POST">
+                    <input type="hidden" name="id" value="{{ c.id }}">
+                    <button type="submit" class="btn btn-cancel">
+                      <i class="fas fa-times"></i> Cancelar
+                    </button>
+                  </form>
                   {% endif %}
                 </div>
               </td>

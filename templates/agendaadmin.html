@@ -330,18 +330,18 @@
           <tbody>
             {% for c in consultas %}
               <tr>
-                <td>{{ c.id }}</td>
-                <td>{{ c.paciente_nome }}</td>
-                <td>{{ c.medico_nome }}</td>
-                <td>{{ c.data }}</td>
-                <td>{{ c.hora }}</td>
-                <td>{{ c.tipo }}</td>
-                <td>
+                <td data-label="ID">{{ c.id }}</td>
+                <td data-label="Paciente">{{ c.paciente_nome }}</td>
+                <td data-label="Médico">{{ c.medico_nome }}</td>
+                <td data-label="Data">{{ c.data }}</td>
+                <td data-label="Hora">{{ c.hora }}</td>
+                <td data-label="Tipo">{{ c.tipo }}</td>
+                <td data-label="Status">
                   <span class="status-badge {{ c.status }}">
                     {{ c.status }}
                   </span>
                 </td>
-                <td class="actions">
+                <td data-label="Ações" class="actions">
                   <div class="actions-group">
                     <!-- Botão MAIS INFORMAÇÕES -->
                     <button

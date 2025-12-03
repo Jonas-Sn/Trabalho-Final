@@ -5,11 +5,10 @@
   font-family: Arial, sans-serif;
 }
 
-/* LAYOUT DESKTOP */
 body {
   display: flex;
-  min-height: 100vh;
-  overflow-y: auto;
+  min-height: 100vh; /* Permite crescer conforme o conteúdo */
+  overflow-y: auto;  /* Adiciona scroll se precisar */
   overflow-x: hidden;
 }
 
@@ -21,11 +20,11 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 15px 0;
-  position: fixed;
+  position: fixed;       /* fixa a barra na lateral esquerda */
   top: 0;
   left: 0;
-  height: 100vh;
-  z-index: 100;
+  height: 100vh;         /* ocupa toda a altura da janela */
+  z-index: 100;          /* fica acima do conteúdo */
 }
 
 .sidebar .logo img {
@@ -70,9 +69,9 @@ body {
   display: flex;
   flex-direction: column;
   background-color: #ffffff;
-  overflow-y: auto;
+  overflow-y: auto;  /* Garante que o conteúdo role */
   height: auto;
-  margin-left: 70px; /* mesma largura da sidebar */
+  margin-left: 70px;     /* distância igual à largura da sidebar */
 }
 
 /* --- Barra superior --- */
@@ -125,8 +124,8 @@ body {
 /* ===== Menu de Configurações ===== */
 .settings-menu {
   position: absolute;
-  left: 80px;
-  bottom: 80px;
+  left: 80px; /* aparece ao lado da barra */
+  bottom: 80px; /* alinha com o ícone */
   width: 180px;
   background: #ffffff;
   border-radius: 8px;
@@ -177,79 +176,64 @@ body {
 
 @media (max-width: 768px) {
 
-  /* body em COLUNA (sidebar em cima, conteúdo abaixo) */
+  /* body em COLUNA (sidebar em cima, conteúdo embaixo) */
   body {
     flex-direction: column;
   }
 
-  /* Sidebar: vira uma “faixa” no topo, com logo em cima e ícones embaixo */
+  /* Sidebar vira barra superior */
   .sidebar {
     position: relative;
     width: 100%;
     height: auto;
-    padding: 10px 16px;
-    flex-direction: column;       /* logo em cima, menu embaixo */
-    align-items: center;
+    padding: 10px 12px;
+    flex-direction: row;
     justify-content: center;
-    gap: 6px;
+    gap: 20px;
+  }
+
+  /* Menu em linha, centralizado */
+  .sidebar .menu {
+    flex-direction: row;
+    gap: 16px;
+    height: auto;
+    justify-content: center;
+    align-items: center;
   }
 
   .sidebar .logo {
     margin: 0;
   }
 
-  .sidebar .logo img {
-    display: block;
-  }
-
-  /* Ícones em linha, centralizados */
-  .sidebar .menu {
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    height: auto;
-  }
-
   .sidebar .config {
     margin-top: 0;
-    margin-left: 8px;
+    margin-left: 10px;
   }
 
-  /* Conteúdo ocupa a tela inteira abaixo da barra */
   .main-content {
     margin-left: 0 !important;
     width: 100%;
-  }
-
-  /* Grids (formulários com várias colunas) viram uma coluna só */
-  .grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Tabelas com scroll horizontal */
-  table {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
   }
 
   .content {
     padding: 10px;
   }
 
-  .box, .section-box {
+  .box,
+  .section-box {
     padding: 15px !important;
   }
 
-  h2, h3 {
+  h2,
+  h3 {
     font-size: 1.2rem;
   }
 
-  .btn, button, input, select, textarea {
+  .btn,
+  button,
+  input,
+  select,
+  textarea {
     font-size: 1rem !important;
   }
 
@@ -257,11 +241,72 @@ body {
     flex-direction: column;
   }
 
-  .filters input, .filters select, .filters button {
+  .filters input,
+  .filters select,
+  .filters button {
     width: 100% !important;
   }
 
   .modal-box {
     width: 95% !important;
+  }
+
+  /* Grids (formulários com várias colunas) viram colunas únicas */
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ===== TABELAS VIRAM CARDS ===== */
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block;
+    width: 100%;
+  }
+
+  thead {
+    display: none; /* esconde cabeçalho padrão */
+  }
+
+  tr {
+    background: #ffffff;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 10px 12px;
+  }
+
+  td {
+    border: none !important;
+    padding: 6px 0;
+    text-align: left !important;
+    font-size: 0.95rem;
+  }
+
+  /* rótulo de cada campo usando data-label */
+  td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #009dff;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  /* Grupo de ações em coluna e 100% de largura */
+  .actions-group {
+    display: flex !important;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .actions-group button,
+  .actions-group form button {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.95rem;
   }
 }

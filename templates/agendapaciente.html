@@ -256,14 +256,14 @@
           <tbody>
             {% for c in consultas %}
             <tr>
-              <td>{{ c.data }}</td>
-              <td>{{ c.hora }}</td>
-              <td>{{ c.medico_nome if c.medico_nome else '—' }}</td>
-              <td>{{ c.tipo }}</td>
-              <td>{{ c.status.capitalize() }}</td>
-              <td>{{ c.observacoes }}</td>
-              <td>{{ c.resumo if c.resumo else '—' }}</td>
-              <td>{{ c.conclusao if c.conclusao else '—' }}</td>
+              <td data-label="Data">{{ c.data }}</td>
+              <td data-label="Hora">{{ c.hora }}</td>
+              <td data-label="Médico">{{ c.medico_nome if c.medico_nome else '—' }}</td>
+              <td data-label="Tipo">{{ c.tipo }}</td>
+              <td data-label="Status">{{ c.status.capitalize() }}</td>
+              <td data-label="Obs.">{{ c.observacoes }}</td>
+              <td data-label="Resumo">{{ c.resumo if c.resumo else '—' }}</td>
+              <td data-label="Conclusão">{{ c.conclusao if c.conclusao else '—' }}</td>
             </tr>
             {% else %}
             <tr><td colspan="8">Você ainda não possui consultas.</td></tr>
