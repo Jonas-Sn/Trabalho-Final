@@ -207,6 +207,12 @@
       <!-- ========== FORMULÁRIO DE SOLICITAÇÃO ========== -->
       <div class="box">
         <h3>Solicitar Consulta</h3>
+        <p class="form-steps-hint">
+          1) Escolha a <strong>especialidade</strong> · 
+          2) (Opcional) escolha o <strong>médico</strong> · 
+          3) Selecione <strong>data</strong> e <strong>horário</strong> · 
+          4) Descreva o motivo da consulta.
+        </p>
 
         <form method="POST" action="{{ url_for('solicitar_consulta') }}" class="grid">
           <!-- CPF do paciente (hidden, vindo da sessão/rota) -->
