@@ -176,3 +176,67 @@ body {
   text-decoration: none;
   color: inherit;
 }
+
+@media (max-width: 768px) {
+
+  /* Sidebar se empilha em cima */
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    flex-wrap: wrap;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  /* Grids (formulários com várias colunas) viram colunas únicas */
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tabelas com scroll horizontal */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Container geral */
+  .content {
+    padding: 10px;
+  }
+
+  .box, .section-box {
+    padding: 15px !important;
+  }
+
+  h2, h3 {
+    font-size: 1.2rem;
+  }
+
+  .btn, button, input, select, textarea {
+    font-size: 1rem !important;
+  }
+
+  /* Ajustes para filtros/admin */
+  .filters {
+    flex-direction: column;
+  }
+
+  .filters input, .filters select, .filters button {
+    width: 100% !important;
+  }
+
+  /* Modal mais responsivo */
+  .modal-box {
+    width: 95% !important;
+  }
+}
