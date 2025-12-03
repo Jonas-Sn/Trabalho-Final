@@ -12,7 +12,6 @@ body {
   overflow-x: hidden;
 }
 
-
 /* --- Barra lateral --- */
 .sidebar {
   width: 70px;
@@ -62,12 +61,6 @@ body {
 .sidebar .menu a:hover,
 .sidebar .config a:hover {
   color: #d9eaff;
-}
-
-.sidebar .menu {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 /* --- Área principal --- */
@@ -128,7 +121,7 @@ body {
   color: #555;
 }
 
-/* ===== Menu de Configurações (abre pelo ícone ⚙️ da sidebar) ===== */
+/* ===== Menu de Configurações ===== */
 .settings-menu {
   position: absolute;
   left: 80px; /* aparece ao lado da barra */
@@ -177,17 +170,38 @@ body {
   color: inherit;
 }
 
+/* ========================= */
+/*        MOBILE             */
+/* ========================= */
+
 @media (max-width: 768px) {
 
-  /* Sidebar se empilha em cima */
+  /* body em COLUNA (sidebar em cima, conteúdo embaixo) */
+  body {
+    flex-direction: column;
+  }
+
+  /* Sidebar vira barra superior */
   .sidebar {
-    position: static;
+    position: relative;
     width: 100%;
     height: auto;
-    display: flex;
-    justify-content: space-around;
     padding: 10px;
-    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  /* menu em LINHA, não mais coluna */
+  .sidebar .menu {
+    flex-direction: row;
+    gap: 16px;
+    height: auto;
+    justify-content: center;
+  }
+
+  .sidebar .config {
+    margin-top: 0;
+    margin-left: 10px;
   }
 
   .main-content {
@@ -209,7 +223,6 @@ body {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Container geral */
   .content {
     padding: 10px;
   }
@@ -226,7 +239,6 @@ body {
     font-size: 1rem !important;
   }
 
-  /* Ajustes para filtros/admin */
   .filters {
     flex-direction: column;
   }
@@ -235,7 +247,6 @@ body {
     width: 100% !important;
   }
 
-  /* Modal mais responsivo */
   .modal-box {
     width: 95% !important;
   }
