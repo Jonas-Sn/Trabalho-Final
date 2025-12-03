@@ -124,3 +124,64 @@ button:hover {
 .cadastro a:hover {
   text-decoration: underline;
 }
+
+/* ========================= */
+/*       AJUSTES GERAIS      */
+/* ========================= */
+
+body {
+  overflow-x: hidden; /* evita scroll lateral no celular */
+}
+
+.logo {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ========================= */
+/*     RESPONSIVO (MOBILE)   */
+/* ========================= */
+
+@media (max-width: 768px) {
+  body {
+    height: auto;                 /* deixa a página crescer conforme o conteúdo */
+    align-items: flex-start;      /* conteúdo começa de cima, não no meio da tela */
+    background: #009dff;          /* fundo simples pra evitar “corte” feio no gradiente */
+    padding: 20px 10px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 400px;             /* largura boa pro celular */
+    height: auto;                 /* deixa a altura se ajustar */
+    flex-direction: column;       /* empilha logo e formulário */
+    border-radius: 10px;
+  }
+
+  .logo-area {
+    flex: 0 0 auto;
+    padding: 20px;
+  }
+
+  .login-area,
+  .cadastro-area {
+    padding: 20px;
+  }
+}
+
+/* Telas bem pequenas (tipo 320px) */
+@media (max-width: 480px) {
+  .container {
+    max-width: 100%;
+    border-radius: 8px;
+  }
+
+  .login-area,
+  .cadastro-area {
+    padding: 15px;
+  }
+
+  button {
+    width: 100%;
+  }
+}
