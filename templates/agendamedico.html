@@ -26,6 +26,12 @@
       padding-left: 10px;
     }
 
+    /* Mensagens flash */
+    .msgwrap { margin-bottom: 15px; }
+    .msg { padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.9rem; }
+    .msg.ok { background:#e6f4ff; color:#0a74da; }
+    .msg.erro { background:#fde2e1; color:#b91c1c; }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -166,7 +172,7 @@
       background: #545b62;
     }
 
-    /* Histórico bonitinho */
+    /* Histórico */
     .history-list {
       max-height: 190px;
       overflow-y: auto;
@@ -205,7 +211,7 @@
       margin-left: 6px;
     }
 
-    /* Modal de conclusão: aproveita base e só estiliza conteúdo */
+    /* Modal de conclusão */
     #modalConclusao .modal-header {
       background: linear-gradient(90deg, #16a34a, #22c55e);
     }
@@ -241,7 +247,7 @@
       <a href="{{ url_for('agendamedico') }}" class="active"><i class="fas fa-calendar-alt"></i></a>
       <a href="#"><i class="fas fa-user"></i></a>
       <div class="config">
-        <a href="config.html"><i class="fas fa-cog"></i></a>
+        <a href="#"><i class="fas fa-cog"></i></a>
       </div>
     </nav>
   </aside>
@@ -249,13 +255,13 @@
   <!-- MAIN -->
   <main class="main-content">
     <header class="topbar">
-      <h2>Agenda do Dr. {{ medico.nome }}</h2>
+      <h2>Agenda do Dr(a). {{ medico.nome }}</h2>
       <div class="icons"><i class="fas fa-bell"></i></div>
     </header>
 
     <section class="content">
       <div class="section-box">
-        <h3>Consultas Agendadas</h3>
+        <h3>Consultas</h3>
 
         <table>
           <thead>
@@ -280,7 +286,7 @@
               </td>
               <td data-label="Ações">
                 <div class="actions-group">
-                  <!-- Botão INFO à ESQUERDA -->
+                  <!-- Info -->
                   <button
                     type="button"
                     class="btn btn-info"
@@ -352,9 +358,7 @@
         <hr style="margin: 10px 0;">
 
         <h4 style="margin-bottom:6px;">Histórico do paciente</h4>
-        <div id="infoHistorico" class="history-list">
-          <!-- preenchido via JS -->
-        </div>
+        <div id="infoHistorico" class="history-list"></div>
       </div>
       <div class="modal-actions">
         <button class="btn-close" onclick="fecharModalInfo()">Fechar</button>
@@ -470,7 +474,7 @@
       document.getElementById('modalConclusao').classList.remove('active');
     }
 
-    // 👉 SCRIPT DO BOTÃO DE CONFIGURAÇÃO
+    // Botão de configurações
     document.addEventListener("DOMContentLoaded", () => {
       const configButton = document.querySelector(".config a");
       const settingsMenu = document.getElementById("settingsMenu");

@@ -6,77 +6,68 @@
 }
 
 body {
-  background-color: #fff;
+  background-color: #f0f4f8;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+  overflow-x: hidden;
   background: linear-gradient(135deg, #009dff 50%, white 50%);
 }
 
+/* Caixa principal do login/cadastro */
 .container {
   display: flex;
-  width: 700px;
-  height: 400px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 760px;
+  min-height: 360px;
+  background-color: #ffffff;
   border-radius: 10px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.12);
   overflow: hidden;
 }
 
+/* Lado da logo */
 .logo-area {
-  background: linear-gradient(135deg, #00ADEF, #007ACC);
   flex: 1;
+  background-color: #007ACC;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: black;
 }
 
 .logo {
-  width: 250px;
+  max-width: 220px;
+  width: 100%;
+  height: auto;
 }
 
-.login-area {
-  flex: 1;
-  background-color: #e6f3ff;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 40px;
-}
-
+/* Lado do formulário (login/cadastro) */
+.login-area,
 .cadastro-area {
   flex: 1;
-  background-color: #e6f3ff;
+  background-color: #f5f9ff;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 40px;
+  padding: 32px;
 }
 
-.login-area h2 {
-  color: #007ACC;
-  margin-bottom: 10px;
-}
-
-.login-area h3 {
-  margin-bottom: 20px;
-  border-bottom: 1px solid #007ACC;
-  width: fit-content;
-  color: #333;
-}
-
+.login-area h2,
 .cadastro-area h2 {
   color: #007ACC;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  font-size: 22px;
 }
 
+.login-area h3,
 .cadastro-area h3 {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+  padding-bottom: 4px;
   border-bottom: 1px solid #007ACC;
   width: fit-content;
   color: #333;
-  text-align: center;
+  font-size: 18px;
 }
 
 form {
@@ -86,24 +77,33 @@ form {
 
 label {
   font-size: 14px;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
+  color: #333;
 }
 
 input {
-  margin-bottom: 15px;
+  margin-bottom: 14px;
   padding: 8px;
-  border: 1px solid #aaa;
+  border: 1px solid #b5c3d1;
   border-radius: 5px;
+  font-size: 14px;
+}
+
+input:focus {
+  outline: none;
+  border-color: #007ACC;
 }
 
 button {
   background-color: #007ACC;
-  color: white;
-  padding: 10px;
+  color: #ffffff;
+  padding: 9px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: 0.3s;
+  font-size: 15px;
+  font-weight: 600;
+  transition: background-color 0.2s;
 }
 
 button:hover {
@@ -113,6 +113,7 @@ button:hover {
 .cadastro {
   margin-top: 10px;
   font-size: 14px;
+  color: #444;
 }
 
 .cadastro a {
@@ -125,51 +126,43 @@ button:hover {
   text-decoration: underline;
 }
 
-/* ========================= */
-/*       AJUSTES GERAIS      */
-/* ========================= */
-
-body {
-  overflow-x: hidden; /* evita scroll lateral no celular */
-}
-
-.logo {
-  max-width: 100%;
-  height: auto;
-}
-
-/* ========================= */
-/*     RESPONSIVO (MOBILE)   */
-/* ========================= */
+/* ------- Responsivo ------- */
 
 @media (max-width: 768px) {
   body {
-    height: auto;                 /* deixa a página crescer conforme o conteúdo */
-    align-items: flex-start;      /* conteúdo começa de cima, não no meio da tela */
-    background: #009dff;          /* fundo simples pra evitar “corte” feio no gradiente */
+    align-items: flex-start;
     padding: 20px 10px;
   }
 
   .container {
-    width: 100%;
-    max-width: 400px;             /* largura boa pro celular */
-    height: auto;                 /* deixa a altura se ajustar */
-    flex-direction: column;       /* empilha logo e formulário */
-    border-radius: 10px;
+    flex-direction: column;
+    max-width: 420px;
   }
 
   .logo-area {
-    flex: 0 0 auto;
-    padding: 20px;
+    padding: 20px 0;
   }
 
   .login-area,
   .cadastro-area {
     padding: 20px;
   }
+
+  .login-area h2,
+  .cadastro-area h2 {
+    font-size: 20px;
+  }
+
+  .login-area h3,
+  .cadastro-area h3 {
+    font-size: 16px;
+  }
+
+  button {
+    width: 100%;
+  }
 }
 
-/* Telas bem pequenas (tipo 320px) */
 @media (max-width: 480px) {
   .container {
     max-width: 100%;
@@ -178,10 +171,12 @@ body {
 
   .login-area,
   .cadastro-area {
-    padding: 15px;
+    padding: 16px;
   }
 
+  label,
+  input,
   button {
-    width: 100%;
+    font-size: 14px;
   }
 }

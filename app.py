@@ -1,80 +1,118 @@
+from datetime import datetime
+import sqlite3
+
 from flask import (
     Flask, render_template, request, redirect,
     url_for, session, flash, jsonify, g
 )
-import sqlite3
-from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'chave_super_secreta_123'
+app.secret_key = "chave_super_secreta_123"
 
-DATABASE = 'database.db'
+DATABASE = "database.db"
+
+# ---------------------------------------------------------------------
+# Constantes simples para evitar "strings mágicas" espalhadas
+# ---------------------------------------------------------------------
+
+TIPO_ADMIN = "admin"
+TIPO_MEDICO = "medico"
+TIPO_PACIENTE = "paciente"
+
+STATUS_SOLICITADA = "solicitada"
+STATUS_AGENDADA = "agendada"
+STATUS_CONCLUIDA = "concluida"
+STATUS_CANCELADA = "cancelada"
 
 
-# ========== Conexão com SQLite ==========
+# ---------------------------------------------------------------------
+# Funções auxiliares
+# ---------------------------------------------------------------------
 
 def get_db():
-    if 'db' not in g:
+    """Abre conexão com o SQLite para a requisição atual."""
+    if "db" not in g:
         g.db = sqlite3.connect(DATABASE)
-        g.db.row_factory = sqlite3.Row  # permite acessar por nome
+        g.db.row_factory = sqlite3.Row
     return g.db
 
 
 @app.teardown_appcontext
 def close_db(exception):
-    db = g.pop('db', None)
+    """Fecha a conexão ao final do ciclo da requisição."""
+    db = g.pop("db", None)
     if db is not None:
         db.close()
 
 
+def normalizar_cpf(cpf: str) -> str:
+    """Remove pontos e traços, mantendo só dígitos."""
+    return "".join(filter(str.isdigit, cpf or ""))
+
+
+def formatar_cpf(cpf: str) -> str:
+    """Formata CPF como 000.000.000-00, se tiver 11 dígitos."""
+    cpf_limpo = normalizar_cpf(cpf)
+    if len(cpf_limpo) == 11:
+        return f"{cpf_limpo[:3]}.{cpf_limpo[3:6]}.{cpf_limpo[6:9]}-{cpf_limpo[9:]}"
+    return cpf or ""
+
+
 def init_db():
+    """Cria as tabelas, se ainda não existirem."""
     db = get_db()
 
-    # Tabela de usuários (admin, médico, paciente)
-    db.execute("""
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            CPF TEXT UNIQUE NOT NULL,
-            nome TEXT NOT NULL,
+            id    INTEGER PRIMARY KEY AUTOINCREMENT,
+            CPF   TEXT UNIQUE NOT NULL,
+            nome  TEXT NOT NULL,
             senha TEXT NOT NULL,
-            tipo TEXT NOT NULL,      -- 'admin', 'medico', 'paciente'
-            cargo TEXT               -- especialidade do médico (ou NULL)
+            tipo  TEXT NOT NULL,  -- admin, medico, paciente
+            cargo TEXT            -- especialidade do médico (ou NULL)
         );
-    """)
+        """
+    )
 
-    # Tabela de consultas
-    db.execute("""
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS consultas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
             paciente_cpf TEXT NOT NULL,
             medico_cpf   TEXT NOT NULL,
-            data         TEXT NOT NULL,  -- 'YYYY-MM-DD'
-            hora         TEXT NOT NULL,  -- 'HH:MM'
-            tipo         TEXT NOT NULL,  -- 'Consulta', 'Retorno', etc
-            status       TEXT NOT NULL,  -- 'solicitada', 'agendada', 'concluida', 'cancelada'
+            data         TEXT NOT NULL,  -- YYYY-MM-DD
+            hora         TEXT NOT NULL,  -- HH:MM
+            tipo         TEXT NOT NULL,  -- Consulta, Retorno etc
+            status       TEXT NOT NULL,  -- solicitada, agendada, concluida, cancelada
             observacoes  TEXT,
             resumo       TEXT,
             conclusao    TEXT,
             cargo        TEXT
         );
-    """)
+        """
+    )
 
-    # Tabela de notificações
-    db.execute("""
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS notificacoes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id    INTEGER PRIMARY KEY AUTOINCREMENT,
             cpf   TEXT NOT NULL,
             texto TEXT NOT NULL,
             lida  INTEGER NOT NULL DEFAULT 0,
             data  TEXT NOT NULL
         );
-    """)
+        """
+    )
 
     db.commit()
 
 
 def inicializar_usuarios_fixos():
-    """Cria admin e médico padrão se ainda não existirem."""
+    """
+    Cria alguns usuários padrão (admin, médicos e um paciente),
+    só se ainda não existirem.
+    """
     db = get_db()
 
     usuarios_fixos = [
@@ -82,29 +120,36 @@ def inicializar_usuarios_fixos():
             "nome": "Administrador",
             "CPF": "00000000001",
             "senha": "admin",
-            "tipo": "admin",
-            "cargo": "Administrador"
+            "tipo": TIPO_ADMIN,
+            "cargo": "Administrador",
         },
         {
             "nome": "Dr. Carlos Silva",
             "CPF": "00000000002",
             "senha": "medico123",
-            "tipo": "medico",
-            "cargo": "Clínico Geral"
+            "tipo": TIPO_MEDICO,
+            "cargo": "Clínico Geral",
         },
         {
             "nome": "Dr. Evandro",
             "CPF": "00000000003",
             "senha": "medico123",
-            "tipo": "medico",
-            "cargo": "Nutricionista"
+            "tipo": TIPO_MEDICO,
+            "cargo": "Nutricionista",
         },
         {
             "nome": "Dra. Sonia",
             "CPF": "00000000004",
             "senha": "medico123",
-            "tipo": "medico",
-            "cargo": "Pediatra"
+            "tipo": TIPO_MEDICO,
+            "cargo": "Pediatra",
+        },
+        {
+            "nome": "Cristiano",
+            "CPF": "11111111111",
+            "senha": "1234",
+            "tipo": TIPO_PACIENTE,
+            "cargo": None,
         },
     ]
 
@@ -112,650 +157,753 @@ def inicializar_usuarios_fixos():
         cur = db.execute("SELECT 1 FROM usuarios WHERE CPF = ?", (u["CPF"],))
         if cur.fetchone() is None:
             db.execute(
-                "INSERT INTO usuarios (CPF, nome, senha, tipo, cargo) VALUES (?,?,?,?,?)",
-                (u["CPF"], u["nome"], u["senha"], u["tipo"], u["cargo"])
+                """
+                INSERT INTO usuarios (CPF, nome, senha, tipo, cargo)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (u["CPF"], u["nome"], u["senha"], u["tipo"], u["cargo"]),
             )
 
     db.commit()
 
 
-# ========== Rotas básicas ==========
+def adicionar_notificacao(cpf: str, texto: str):
+    """Insere uma notificação simples para um usuário."""
+    db = get_db()
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    db.execute(
+        "INSERT INTO notificacoes (cpf, texto, lida, data) VALUES (?, ?, 0, ?)",
+        (cpf, texto, agora),
+    )
+    db.commit()
 
-@app.route('/')
+
+# ---------------------------------------------------------------------
+# Rotas principais / autenticação
+# ---------------------------------------------------------------------
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
-@app.route('/cadastro', methods=['GET', 'POST'])
+@app.route("/cadastro", methods=["GET", "POST"])
 def cadastro():
-    if request.method == 'POST':
-        nome = request.form['usuario']
-        cpf = request.form['CPF']
-        senha = request.form['senha']
+    if request.method == "POST":
+        nome = request.form.get("usuario", "").strip()
+        cpf = normalizar_cpf(request.form.get("CPF", ""))
+        senha = request.form.get("senha", "")
 
-        cpf = cpf.strip().replace(".", "").replace("-", "")
         if not cpf.isdigit() or len(cpf) != 11:
-            return render_template('cadastro.html',
-                                   erro="CPF inválido! Deve conter 11 dígitos numéricos.")
+            return render_template(
+                "cadastro.html",
+                erro="CPF inválido! Deve conter 11 dígitos numéricos.",
+            )
 
         db = get_db()
-
         cur = db.execute("SELECT 1 FROM usuarios WHERE CPF = ?", (cpf,))
         if cur.fetchone():
-            return render_template('cadastro.html', erro="Esse CPF já está cadastrado!")
+            return render_template(
+                "cadastro.html",
+                erro="Esse CPF já está cadastrado!",
+            )
 
         db.execute(
             "INSERT INTO usuarios (CPF, nome, senha, tipo) VALUES (?, ?, ?, ?)",
-            (cpf, nome, senha, 'paciente')
+            (cpf, nome, senha, TIPO_PACIENTE),
         )
         db.commit()
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
-    return render_template('cadastro.html')
+    return render_template("cadastro.html")
 
 
-@app.route('/login', methods=['POST'])
+@app.route("/login", methods=["POST"])
 def login():
-    cpf = request.form['cpf']
-    senha = request.form['senha']
-
-    cpf = cpf.strip().replace('.', '').replace('-', '')
+    cpf = normalizar_cpf(request.form.get("cpf", ""))
+    senha = request.form.get("senha", "")
 
     db = get_db()
     cur = db.execute(
         "SELECT * FROM usuarios WHERE CPF = ? AND senha = ?",
-        (cpf, senha)
+        (cpf, senha),
     )
-    u = cur.fetchone()
+    usuario = cur.fetchone()
 
-    if u:
-        tipo = u["tipo"] if u["tipo"] else 'paciente'
-        session['cpf'] = u["CPF"]
-        session['tipo'] = tipo
+    if not usuario:
+        return render_template("index.html", erro="CPF ou senha incorretos!")
 
-        if tipo == 'admin':
-            return redirect(url_for('dashboardadmin'))
-        elif tipo == 'medico':
-            return redirect(url_for('agendamedico'))
-        else:
-            return redirect(url_for('agendapaciente'))
+    tipo = usuario["tipo"] or TIPO_PACIENTE
+    session["cpf"] = usuario["CPF"]
+    session["tipo"] = tipo
 
-    return render_template('index.html', erro="CPF ou senha incorretos!")
+    if tipo == TIPO_ADMIN:
+        return redirect(url_for("dashboardadmin"))
+    if tipo == TIPO_MEDICO:
+        return redirect(url_for("agendamedico"))
+    return redirect(url_for("agendapaciente"))
 
 
-# ========== Admin - Clientes ==========
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Você saiu com sucesso.", "ok")
+    return redirect(url_for("index"))
 
-@app.route('/clientesadmin')
+
+# ---------------------------------------------------------------------
+# Admin - clientes (pacientes e admins)
+# ---------------------------------------------------------------------
+
+@app.route("/clientesadmin")
 def clientesadmin():
     db = get_db()
-    busca = (request.args.get('busca') or '').strip().lower()
+    busca = (request.args.get("busca") or "").strip().lower()
 
     cur = db.execute("SELECT CPF, nome, senha, tipo, cargo FROM usuarios")
     usuarios = [dict(r) for r in cur.fetchall()]
 
-    # Filtra só admin e pacientes
-    usuarios = [u for u in usuarios if u.get('tipo') in ['admin', 'paciente']]
+    # mantém somente admins e pacientes
+    usuarios = [
+        u for u in usuarios if u.get("tipo") in (TIPO_ADMIN, TIPO_PACIENTE)
+    ]
 
     if busca:
         usuarios = [
-            u for u in usuarios
-            if busca in u.get('nome', '').lower() or busca in u.get('CPF', '')
+            u
+            for u in usuarios
+            if busca in (u.get("nome") or "").lower()
+            or busca in (u.get("CPF") or "")
         ]
 
     for u in usuarios:
-        cpf = u.get('CPF', '')
-        if len(cpf) == 11 and cpf.isdigit():
-            u['CPF'] = f"{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}"
-        else:
-            u['CPF'] = cpf
+        u["CPF"] = formatar_cpf(u.get("CPF", ""))
+        u["nome"] = (u.get("nome") or "").title()
+        u["tipo"] = (u.get("tipo") or "").title()
 
-        u['nome'] = (u.get('nome') or '').title()
-        u['tipo'] = (u.get('tipo') or '').title()
-
-    return render_template('clientesadmin.html', usuarios=usuarios)
+    return render_template("clientesadmin.html", usuarios=usuarios)
 
 
-@app.route('/novo_cliente', methods=['POST'])
+@app.route("/novo_cliente", methods=["POST"])
 def novo_cliente():
-    nome = request.form['nome']
-    cpf = request.form['CPF'].strip().replace('.', '').replace('-', '')
-    senha = request.form['senha']
+    nome = (request.form.get("nome") or "").strip()
+    cpf = normalizar_cpf(request.form.get("CPF", ""))
+    senha = request.form.get("senha", "")
 
     db = get_db()
-
     cur = db.execute("SELECT 1 FROM usuarios WHERE CPF = ?", (cpf,))
     if cur.fetchone():
-        flash('Este CPF já está cadastrado!', 'erro')
-        return redirect(url_for('clientesadmin'))
+        flash("Este CPF já está cadastrado!", "erro")
+        return redirect(url_for("clientesadmin"))
 
     db.execute(
-        "INSERT INTO usuarios (CPF, nome, senha, tipo) VALUES (?,?,?,?)",
-        (cpf, nome, senha, 'paciente')
+        "INSERT INTO usuarios (CPF, nome, senha, tipo) VALUES (?, ?, ?, ?)",
+        (cpf, nome, senha, TIPO_PACIENTE),
     )
     db.commit()
-    flash('Cliente cadastrado com sucesso!', 'ok')
-    return redirect(url_for('clientesadmin'))
+    flash("Cliente cadastrado com sucesso!", "ok")
+    return redirect(url_for("clientesadmin"))
 
 
-@app.route('/remover_cliente', methods=['POST'])
+@app.route("/remover_cliente", methods=["POST"])
 def remover_cliente():
-    cpf = (request.form.get('CPF') or '').replace('.', '').replace('-', '').strip()
+    cpf = normalizar_cpf(request.form.get("CPF") or "")
 
     db = get_db()
     cur = db.execute("DELETE FROM usuarios WHERE CPF = ?", (cpf,))
     if cur.rowcount > 0:
         db.commit()
-        flash('Cliente removido com sucesso!', 'ok')
+        flash("Cliente removido com sucesso!", "ok")
     else:
-        flash('Cliente não encontrado.', 'erro')
+        flash("Cliente não encontrado.", "erro")
 
-    return redirect(url_for('clientesadmin'))
+    return redirect(url_for("clientesadmin"))
 
 
-@app.route('/salvar_edicao_cliente', methods=['POST'])
+@app.route("/salvar_edicao_cliente", methods=["POST"])
 def salvar_edicao_cliente():
-    cpf_original = (request.form.get('cpf_original') or '').replace('.', '').replace('-', '')
-    nome = (request.form.get('nome') or '').strip().title()
-    novo_cpf = ''.join(filter(str.isdigit, request.form.get('CPF') or ''))
-    tipo = (request.form.get('tipo') or '').lower()
-    cargo = (request.form.get('cargo') or '').strip()
+    cpf_original = normalizar_cpf(request.form.get("cpf_original") or "")
+    nome = (request.form.get("nome") or "").strip().title()
+    novo_cpf = normalizar_cpf(request.form.get("CPF") or "")
+    tipo = (request.form.get("tipo") or "").lower()
+    cargo = (request.form.get("cargo") or "").strip() or None
 
     db = get_db()
 
     cur = db.execute("SELECT * FROM usuarios WHERE CPF = ?", (cpf_original,))
-    u = cur.fetchone()
-
-    if not u:
-        flash('Registro não encontrado.', 'erro')
-        return redirect(url_for('clientesadmin'))
-
-    db.execute(
-        "UPDATE usuarios SET nome = ?, CPF = ?, tipo = ?, cargo = ? WHERE CPF = ?",
-        (nome, novo_cpf, tipo, cargo if cargo else None, cpf_original)
-    )
-    db.commit()
-    flash('Registro atualizado com sucesso!', 'ok')
-
-    if tipo == 'medico':
-        return redirect(url_for('medicosadmin'))
-    else:
-        return redirect(url_for('clientesadmin'))
-
-
-# ========== Admin - Médicos ==========
-
-@app.route('/novo_medico', methods=['POST'])
-def novo_medico():
-    nome = request.form['nome']
-    cpf = request.form['CPF'].strip().replace('.', '').replace('-', '')
-    senha = request.form['senha']
-    cargo = (request.form.get('cargo') or '').strip()
-
-    if not cargo:
-        flash('Informe o cargo/especialidade do médico.', 'erro')
-        return redirect(url_for('medicosadmin'))
-
-    db = get_db()
-
-    cur = db.execute("SELECT 1 FROM usuarios WHERE CPF = ?", (cpf,))
-    if cur.fetchone():
-        flash('Este CPF já está cadastrado!', 'erro')
-        return redirect(url_for('medicosadmin'))
+    registro = cur.fetchone()
+    if not registro:
+        flash("Registro não encontrado.", "erro")
+        return redirect(url_for("clientesadmin"))
 
     db.execute(
-        "INSERT INTO usuarios (CPF, nome, senha, tipo, cargo) VALUES (?,?,?,?,?)",
-        (cpf, nome, senha, 'medico', cargo)
+        """
+        UPDATE usuarios
+           SET nome = ?, CPF = ?, tipo = ?, cargo = ?
+         WHERE CPF = ?
+        """,
+        (nome, novo_cpf, tipo, cargo, cpf_original),
     )
     db.commit()
-    flash('Médico cadastrado com sucesso!', 'ok')
-    return redirect(url_for('medicosadmin'))
+    flash("Registro atualizado com sucesso!", "ok")
+
+    if tipo == TIPO_MEDICO:
+        return redirect(url_for("medicosadmin"))
+    return redirect(url_for("clientesadmin"))
 
 
-@app.route('/remover_medico', methods=['POST'])
-def remover_medico():
-    cpf = (request.form.get('CPF') or '').replace('.', '').replace('-', '').strip()
-    db = get_db()
+# ---------------------------------------------------------------------
+# Admin - médicos
+# ---------------------------------------------------------------------
 
-    cur = db.execute("DELETE FROM usuarios WHERE CPF = ?", (cpf,))
-    if cur.rowcount > 0:
-        db.commit()
-        flash('Médico removido com sucesso!', 'ok')
-    else:
-        flash('Médico não encontrado.', 'erro')
-
-    return redirect(url_for('medicosadmin'))
-
-
-@app.route('/medicosadmin')
+@app.route("/medicosadmin")
 def medicosadmin():
     db = get_db()
-    busca = (request.args.get('busca') or '').strip().lower()
+    busca = (request.args.get("busca") or "").strip().lower()
 
-    cur = db.execute("SELECT CPF, nome, tipo, cargo FROM usuarios WHERE tipo = 'medico'")
+    cur = db.execute(
+        "SELECT CPF, nome, tipo, cargo FROM usuarios WHERE tipo = ?",
+        (TIPO_MEDICO,),
+    )
     usuarios = [dict(r) for r in cur.fetchall()]
 
     if busca:
         usuarios = [
-            u for u in usuarios
-            if busca in (u.get('nome') or '').lower() or busca in (u.get('CPF') or '')
+            u
+            for u in usuarios
+            if busca in (u.get("nome") or "").lower()
+            or busca in (u.get("CPF") or "")
         ]
 
     for u in usuarios:
-        cpf = u.get('CPF', '')
-        if len(cpf) == 11 and cpf.isdigit():
-            u['CPF'] = f"{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}"
-        else:
-            u['CPF'] = cpf
-        u['nome'] = (u.get('nome') or '').title()
+        u["CPF"] = formatar_cpf(u.get("CPF", ""))
+        u["nome"] = (u.get("nome") or "").title()
 
-    return render_template('medicosadmin.html', usuarios=usuarios)
+    return render_template("medicosadmin.html", usuarios=usuarios)
 
 
-# ========== Admin - Dashboard / Agenda ==========
+@app.route("/novo_medico", methods=["POST"])
+def novo_medico():
+    nome = (request.form.get("nome") or "").strip()
+    cpf = normalizar_cpf(request.form.get("CPF") or "")
+    senha = request.form.get("senha", "")
+    cargo = (request.form.get("cargo") or "").strip()
 
-@app.route('/dashboardadmin')
+    if not cargo:
+        flash("Informe o cargo/especialidade do médico.", "erro")
+        return redirect(url_for("medicosadmin"))
+
+    db = get_db()
+    cur = db.execute("SELECT 1 FROM usuarios WHERE CPF = ?", (cpf,))
+    if cur.fetchone():
+        flash("Este CPF já está cadastrado!", "erro")
+        return redirect(url_for("medicosadmin"))
+
+    db.execute(
+        """
+        INSERT INTO usuarios (CPF, nome, senha, tipo, cargo)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (cpf, nome, senha, TIPO_MEDICO, cargo),
+    )
+    db.commit()
+    flash("Médico cadastrado com sucesso!", "ok")
+    return redirect(url_for("medicosadmin"))
+
+
+@app.route("/remover_medico", methods=["POST"])
+def remover_medico():
+    cpf = normalizar_cpf(request.form.get("CPF") or "")
+
+    db = get_db()
+    cur = db.execute("DELETE FROM usuarios WHERE CPF = ?", (cpf,))
+    if cur.rowcount > 0:
+        db.commit()
+        flash("Médico removido com sucesso!", "ok")
+    else:
+        flash("Médico não encontrado.", "erro")
+
+    return redirect(url_for("medicosadmin"))
+
+
+# ---------------------------------------------------------------------
+# Admin - dashboard / agenda
+# ---------------------------------------------------------------------
+
+@app.route("/dashboardadmin")
 def dashboardadmin():
-    return render_template('dashboardadmin.html')
+    return render_template("dashboardadmin.html")
 
 
-@app.route('/agendaadmin', methods=['GET', 'POST'])
+@app.route("/agendaadmin", methods=["GET", "POST"])
 def agendaadmin():
     db = get_db()
 
-    # POST: criar nova consulta
-    if request.method == 'POST':
-        paciente_cpf = (request.form.get('paciente_cpf') or '').replace('.', '').replace('-', '').strip()
-        cargo = (request.form.get('cargo') or '').strip()
-        medico_cpf = (request.form.get('medico_cpf') or '').replace('.', '').replace('-', '').strip()
-        data = request.form.get('data') or ''
-        hora = request.form.get('hora') or ''
-        tipo = request.form.get('tipo') or 'Consulta'
-        obs = request.form.get('observacoes') or ''
+    if request.method == "POST":
+        paciente_cpf = normalizar_cpf(request.form.get("paciente_cpf") or "")
+        medico_cpf = normalizar_cpf(request.form.get("medico_cpf") or "")
+        cargo = (request.form.get("cargo") or "").strip()
+        data = request.form.get("data") or ""
+        hora = request.form.get("hora") or ""
+        tipo = request.form.get("tipo") or "Consulta"
+        obs = request.form.get("observacoes") or ""
 
         if not (paciente_cpf and medico_cpf and data and hora and cargo):
-            flash('Preencha todos os campos obrigatórios (paciente, cargo, médico, data e hora).', 'erro')
-            return redirect(url_for('agendaadmin'))
+            flash(
+                "Preencha todos os campos obrigatórios (paciente, cargo, médico, data e hora).",
+                "erro",
+            )
+            return redirect(url_for("agendaadmin"))
 
-        # Valida paciente
+        # valida paciente
         cur = db.execute(
-            "SELECT 1 FROM usuarios WHERE CPF = ? AND tipo = 'paciente'",
-            (paciente_cpf,)
+            "SELECT 1 FROM usuarios WHERE CPF = ? AND tipo = ?",
+            (paciente_cpf, TIPO_PACIENTE),
         )
-        existe_paciente = cur.fetchone() is not None
+        if cur.fetchone() is None:
+            flash("CPF de paciente inválido.", "erro")
+            return redirect(url_for("agendaadmin"))
 
-        # Valida médico
+        # valida médico
         cur = db.execute(
-            "SELECT 1 FROM usuarios WHERE CPF = ? AND tipo = 'medico'",
-            (medico_cpf,)
+            "SELECT 1 FROM usuarios WHERE CPF = ? AND tipo = ?",
+            (medico_cpf, TIPO_MEDICO),
         )
-        existe_medico = cur.fetchone() is not None
+        if cur.fetchone() is None:
+            flash("CPF de médico inválido.", "erro")
+            return redirect(url_for("agendaadmin"))
 
-        if not existe_paciente or not existe_medico:
-            flash('CPF de paciente ou médico inválido.', 'erro')
-            return redirect(url_for('agendaadmin'))
-
-        # Conflito de horário
-        cur = db.execute("""
-            SELECT 1 FROM consultas
+        # evita conflito de horário
+        cur = db.execute(
+            """
+            SELECT 1
+              FROM consultas
              WHERE medico_cpf = ?
                AND data       = ?
                AND hora       = ?
-               AND status    != 'cancelada'
-        """, (medico_cpf, data, hora))
-        conflito = cur.fetchone() is not None
+               AND status    != ?
+            """,
+            (medico_cpf, data, hora, STATUS_CANCELADA),
+        )
+        if cur.fetchone():
+            flash("Já existe consulta para esse médico neste horário.", "erro")
+            return redirect(url_for("agendaadmin"))
 
-        if conflito:
-            flash('Já existe consulta para esse médico neste horário.', 'erro')
-            return redirect(url_for('agendaadmin'))
-
-        db.execute("""
+        db.execute(
+            """
             INSERT INTO consultas
                 (paciente_cpf, medico_cpf, data, hora, tipo, status, observacoes, cargo)
-            VALUES (?,?,?,?,?,?,?,?)
-        """, (paciente_cpf, medico_cpf, data, hora, tipo, 'agendada', obs, cargo))
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (paciente_cpf, medico_cpf, data, hora, tipo, STATUS_AGENDADA, obs, cargo),
+        )
         db.commit()
-        flash('Consulta criada com sucesso!', 'ok')
-        return redirect(url_for('agendaadmin'))
+        flash("Consulta criada com sucesso!", "ok")
+        return redirect(url_for("agendaadmin"))
 
-    # GET: listagem + filtros
+    # GET: listagem com filtros
     usuarios = [dict(r) for r in db.execute("SELECT * FROM usuarios").fetchall()]
     consultas = [dict(r) for r in db.execute("SELECT * FROM consultas").fetchall()]
 
-    mapa_nomes = {u['CPF']: u['nome'] for u in usuarios}
+    mapa_nomes = {u["CPF"]: u["nome"] for u in usuarios}
 
     for c in consultas:
-        c['paciente_nome'] = mapa_nomes.get(c.get('paciente_cpf', ''), c.get('paciente_cpf', ''))
-        c['medico_nome'] = mapa_nomes.get(c.get('medico_cpf', ''), c.get('medico_cpf', ''))
+        c["paciente_nome"] = mapa_nomes.get(
+            c.get("paciente_cpf", ""), c.get("paciente_cpf", "")
+        )
+        c["medico_nome"] = mapa_nomes.get(
+            c.get("medico_cpf", ""), c.get("medico_cpf", "")
+        )
 
-    busca_paciente = (request.args.get('busca_paciente') or '').strip().lower()
-    busca_medico = (request.args.get('busca_medico') or '').strip().lower()
-    filtro_status = (request.args.get('status') or '').strip().lower()
-    filtro_data = (request.args.get('data') or '').strip()
+    busca_paciente = (request.args.get("busca_paciente") or "").strip().lower()
+    busca_medico = (request.args.get("busca_medico") or "").strip().lower()
+    filtro_status = (request.args.get("status") or "").strip().lower()
+    filtro_data = (request.args.get("data") or "").strip()
 
     lista = consultas
 
     if busca_paciente:
         lista = [
-            c for c in lista
-            if busca_paciente in (c.get('paciente_nome', '')).lower()
-            or busca_paciente in (c.get('paciente_cpf', ''))
+            c
+            for c in lista
+            if busca_paciente in (c.get("paciente_nome", "")).lower()
+            or busca_paciente in (c.get("paciente_cpf", ""))
         ]
 
     if busca_medico:
-        lista = [c for c in lista if busca_medico in (c.get('medico_nome', '')).lower()]
+        lista = [
+            c
+            for c in lista
+            if busca_medico in (c.get("medico_nome", "")).lower()
+        ]
 
     if filtro_status:
-        lista = [c for c in lista if (c.get('status') or '').lower() == filtro_status]
+        lista = [
+            c
+            for c in lista
+            if (c.get("status") or "").lower() == filtro_status
+        ]
 
     if filtro_data:
-        lista = [c for c in lista if c.get('data', '') == filtro_data]
+        lista = [c for c in lista if c.get("data", "") == filtro_data]
 
     try:
-        lista.sort(key=lambda x: (x.get('data', ''), x.get('hora', '')))
+        lista.sort(key=lambda x: (x.get("data", ""), x.get("hora", "")))
     except Exception:
         pass
 
-    medicos = [u for u in usuarios if u.get('tipo') == 'medico']
+    medicos = [u for u in usuarios if u.get("tipo") == TIPO_MEDICO]
 
     return render_template(
-        'agendaadmin.html',
+        "agendaadmin.html",
         consultas=lista,
         medicos=medicos,
-        usuarios=usuarios
+        usuarios=usuarios,
     )
 
 
-@app.route('/aprovar_consulta', methods=['POST'])
+@app.route("/aprovar_consulta", methods=["POST"])
 def aprovar_consulta():
-    consulta_id = (request.form.get('id') or '').strip()
+    consulta_id = (request.form.get("id") or "").strip()
     db = get_db()
 
-    cur = db.execute("SELECT paciente_cpf FROM consultas WHERE id = ?", (consulta_id,))
+    cur = db.execute(
+        "SELECT paciente_cpf FROM consultas WHERE id = ?", (consulta_id,)
+    )
     consulta = cur.fetchone()
-
     if not consulta:
-        flash('Consulta não encontrada.', 'erro')
-        return redirect(url_for('agendaadmin'))
+        flash("Consulta não encontrada.", "erro")
+        return redirect(url_for("agendaadmin"))
 
-    db.execute("UPDATE consultas SET status = 'agendada' WHERE id = ?", (consulta_id,))
+    db.execute(
+        "UPDATE consultas SET status = ? WHERE id = ?",
+        (STATUS_AGENDADA, consulta_id),
+    )
     db.commit()
-    flash('Consulta aprovada com sucesso!', 'ok')
+    flash("Consulta aprovada com sucesso!", "ok")
 
     adicionar_notificacao(consulta["paciente_cpf"], "Sua consulta foi aprovada!")
-    return redirect(url_for('agendaadmin'))
+    return redirect(url_for("agendaadmin"))
 
 
-@app.route('/cancelar_consulta', methods=['POST'])
+@app.route("/cancelar_consulta", methods=["POST"])
 def cancelar_consulta():
-    consulta_id = (request.form.get('id') or '').strip()
+    consulta_id = (request.form.get("id") or "").strip()
     db = get_db()
 
-    cur = db.execute("UPDATE consultas SET status = 'cancelada' WHERE id = ?", (consulta_id,))
+    cur = db.execute(
+        "UPDATE consultas SET status = ? WHERE id = ?",
+        (STATUS_CANCELADA, consulta_id),
+    )
     if cur.rowcount > 0:
         db.commit()
-        flash('Consulta cancelada.', 'ok')
+        flash("Consulta cancelada.", "ok")
     else:
-        flash('Consulta não encontrada.', 'erro')
+        flash("Consulta não encontrada.", "erro")
 
-    return redirect(url_for('agendaadmin'))
+    return redirect(url_for("agendaadmin"))
 
 
-# ========== Agenda Médico ==========
+# ---------------------------------------------------------------------
+# Agenda médico
+# ---------------------------------------------------------------------
 
-@app.route('/agendamedico')
+@app.route("/agendamedico")
 def agendamedico():
     db = get_db()
-    medico_cpf = (session.get('cpf') or request.args.get('medico_cpf') or '').replace('.', '').replace('-', '').strip()
+    medico_cpf = normalizar_cpf(
+        session.get("cpf") or request.args.get("medico_cpf") or ""
+    )
 
     if not medico_cpf:
-        return "Informe medico_cpf na querystring ou faça login como médico.", 400
+        return (
+            "Informe medico_cpf na querystring ou faça login como médico.",
+            400,
+        )
 
-    cur = db.execute("SELECT * FROM usuarios WHERE CPF = ? AND tipo = 'medico'", (medico_cpf,))
+    cur = db.execute(
+        "SELECT * FROM usuarios WHERE CPF = ? AND tipo = ?",
+        (medico_cpf, TIPO_MEDICO),
+    )
     medico = cur.fetchone()
     if not medico:
         return "Médico não encontrado ou não autorizado.", 403
 
-    # Consultas deste médico (exceto canceladas)
-    cur = db.execute("""
+    cur = db.execute(
+        """
         SELECT * FROM consultas
          WHERE medico_cpf = ?
-           AND status != 'cancelada'
-    """, (medico_cpf,))
-    minhas = [dict(r) for r in cur.fetchall()]
+           AND status != ?
+        """,
+        (medico_cpf, STATUS_CANCELADA),
+    )
+    consultas_medico = [dict(r) for r in cur.fetchall()]
 
-    # Mapa CPF -> nome
-    mapa_nomes = {r['CPF']: r['nome'] for r in db.execute("SELECT CPF, nome FROM usuarios").fetchall()}
+    mapa_nomes = {
+        r["CPF"]: r["nome"]
+        for r in db.execute("SELECT CPF, nome FROM usuarios").fetchall()
+    }
 
-    for c in minhas:
-        c['paciente_nome'] = mapa_nomes.get(c.get('paciente_cpf', ''), c.get('paciente_cpf', ''))
+    for c in consultas_medico:
+        c["paciente_nome"] = mapa_nomes.get(
+            c.get("paciente_cpf", ""), c.get("paciente_cpf", "")
+        )
 
-        paciente_cpf = c.get('paciente_cpf')
-
-        # Histórico: consultas concluídas desse paciente (qualquer médico)
-        cur_hist = db.execute("""
-            SELECT * FROM consultas
+        paciente_cpf = c.get("paciente_cpf")
+        cur_hist = db.execute(
+            """
+            SELECT *
+              FROM consultas
              WHERE paciente_cpf = ?
-               AND status = 'concluida'
+               AND status       = ?
              ORDER BY data DESC, hora DESC
-        """, (paciente_cpf,))
+            """,
+            (paciente_cpf, STATUS_CONCLUIDA),
+        )
         historico_rows = cur_hist.fetchall()
-
         historico = []
         for h in historico_rows:
-            historico.append({
-                'data': h['data'],
-                'hora': h['hora'],
-                'tipo': h['tipo'],
-                'status': h['status'],
-                'medico_nome': mapa_nomes.get(h['medico_cpf'], h['medico_cpf']),
-                'resumo': h['resumo'],
-                'conclusao': h['conclusao']
-            })
+            historico.append(
+                {
+                    "data": h["data"],
+                    "hora": h["hora"],
+                    "tipo": h["tipo"],
+                    "status": h["status"],
+                    "medico_nome": mapa_nomes.get(
+                        h["medico_cpf"], h["medico_cpf"]
+                    ),
+                    "resumo": h["resumo"],
+                    "conclusao": h["conclusao"],
+                }
+            )
 
-        c['historico'] = historico
+        c["historico"] = historico
 
     try:
-        minhas.sort(key=lambda x: (x.get('data', ''), x.get('hora', '')))
+        consultas_medico.sort(
+            key=lambda x: (x.get("data", ""), x.get("hora", ""))
+        )
     except Exception:
         pass
 
-    return render_template('agendamedico.html', medico=medico, consultas=minhas)
+    return render_template(
+        "agendamedico.html", medico=medico, consultas=consultas_medico
+    )
 
 
-# ========== Agenda Paciente ==========
+@app.route("/concluir_consulta", methods=["POST"])
+def concluir_consulta():
+    consulta_id = (request.form.get("id") or "").strip()
+    resumo = (request.form.get("resumo") or "").strip()
+    conclusao = (request.form.get("conclusao") or "").strip()
 
-@app.route('/agendapaciente')
+    db = get_db()
+    cur = db.execute("SELECT * FROM consultas WHERE id = ?", (consulta_id,))
+    consulta = cur.fetchone()
+
+    if not consulta:
+        flash("Consulta não encontrada.", "erro")
+        return redirect(url_for("agendamedico"))
+
+    if consulta["status"] != STATUS_AGENDADA:
+        flash("Somente consultas agendadas podem ser concluídas.", "erro")
+        return redirect(url_for("agendamedico"))
+
+    db.execute(
+        """
+        UPDATE consultas
+           SET status    = ?,
+               resumo    = ?,
+               conclusao = ?
+         WHERE id = ?
+        """,
+        (STATUS_CONCLUIDA, resumo, conclusao, consulta_id),
+    )
+    db.commit()
+
+    flash("Consulta marcada como concluída e registrada no histórico.", "ok")
+    adicionar_notificacao(
+        consulta["paciente_cpf"],
+        "Sua consulta foi concluída! Veja o resumo no histórico.",
+    )
+    return redirect(url_for("agendamedico"))
+
+
+# ---------------------------------------------------------------------
+# Agenda paciente
+# ---------------------------------------------------------------------
+
+@app.route("/agendapaciente")
 def agendapaciente():
     db = get_db()
 
-    paciente_cpf = (session.get('cpf') or request.args.get('paciente_cpf') or '').replace('.', '').replace('-', '').strip()
+    paciente_cpf = normalizar_cpf(
+        session.get("cpf") or request.args.get("paciente_cpf") or ""
+    )
     if not paciente_cpf:
-        return "CPF do paciente não encontrado (faça login ou use ?paciente_cpf=XXXXXXXXXXX)", 400
+        return (
+            "CPF do paciente não encontrado (faça login ou use ?paciente_cpf=XXXXXXXXXXX)",
+            400,
+        )
 
-    cur = db.execute("""
-        SELECT * FROM consultas
+    cur = db.execute(
+        """
+        SELECT *
+          FROM consultas
          WHERE paciente_cpf = ?
          ORDER BY data, hora
-    """, (paciente_cpf,))
-    minhas = [dict(r) for r in cur.fetchall()]
+        """,
+        (paciente_cpf,),
+    )
+    consultas_paciente = [dict(r) for r in cur.fetchall()]
 
-    mapa_nomes = {r['CPF']: r['nome'] for r in db.execute("SELECT CPF, nome FROM usuarios").fetchall()}
+    mapa_nomes = {
+        r["CPF"]: r["nome"]
+        for r in db.execute("SELECT CPF, nome FROM usuarios").fetchall()
+    }
 
-    for c in minhas:
-        c['medico_nome'] = mapa_nomes.get(c.get('medico_cpf', ''), c.get('medico_cpf', '—'))
+    for c in consultas_paciente:
+        c["medico_nome"] = mapa_nomes.get(
+            c.get("medico_cpf", ""), c.get("medico_cpf", "—")
+        )
 
-    medicos = [dict(r) for r in db.execute("SELECT * FROM usuarios WHERE tipo = 'medico'").fetchall()]
-    cargos = sorted({m.get('cargo') for m in medicos if m.get('cargo')})
+    medicos = [
+        dict(r)
+        for r in db.execute(
+            "SELECT * FROM usuarios WHERE tipo = ?", (TIPO_MEDICO,)
+        ).fetchall()
+    ]
+    cargos = sorted({m.get("cargo") for m in medicos if m.get("cargo")})
 
     return render_template(
-        'agendapaciente.html',
-        consultas=minhas,
+        "agendapaciente.html",
+        consultas=consultas_paciente,
         medicos=medicos,
         cargos=cargos,
-        paciente_cpf=paciente_cpf
+        paciente_cpf=paciente_cpf,
     )
 
-@app.route('/horarios_disponiveis')
+
+@app.route("/horarios_disponiveis")
 def horarios_disponiveis():
     db = get_db()
 
     data = request.args.get("data") or ""
-    medico_cpf = (request.args.get("medico_cpf") or "").replace(".", "").replace("-", "").strip()
+    medico_cpf = normalizar_cpf(request.args.get("medico_cpf") or "")
     cargo = (request.args.get("cargo") or "").strip()
 
-    # Se não tiver data, não tem o que fazer
     if not data:
         return jsonify({"horarios": []})
 
-    # Se não veio médico, mas veio cargo, tenta escolher um médico pelo cargo
+    # se veio cargo mas não veio médico, tenta achar um médico daquele cargo
     if not medico_cpf and cargo:
         cur = db.execute(
-            "SELECT CPF FROM usuarios WHERE tipo = 'medico' AND cargo = ?",
-            (cargo,)
+            "SELECT CPF FROM usuarios WHERE tipo = ? AND cargo = ?",
+            (TIPO_MEDICO, cargo),
         )
         row = cur.fetchone()
         if row:
             medico_cpf = row["CPF"]
 
-    # Se ainda assim não tem médico, devolve vazio
     if not medico_cpf:
         return jsonify({"horarios": []})
 
-    # Busca horários já ocupados para esse médico nessa data (exceto canceladas)
-    cur = db.execute("""
-        SELECT hora FROM consultas
+    cur = db.execute(
+        """
+        SELECT hora
+          FROM consultas
          WHERE medico_cpf = ?
-           AND data = ?
-           AND status != 'cancelada'
-    """, (medico_cpf, data))
+           AND data       = ?
+           AND status    != ?
+        """,
+        (medico_cpf, data, STATUS_CANCELADA),
+    )
     ocupados = {r["hora"] for r in cur.fetchall()}
 
-    # Grade padrão de horários (ajuste como quiser)
     base_horarios = []
     for h in range(8, 18):  # 08h até 17h
-        for m in (0, 30):   # de 30 em 30 min
+        for m in (0, 30):
             base_horarios.append(f"{h:02d}:{m:02d}")
 
-    # Filtra só horários livres
     livres = [h for h in base_horarios if h not in ocupados]
-
     return jsonify({"horarios": livres})
 
 
-@app.route('/solicitar_consulta', methods=['POST'])
+@app.route("/solicitar_consulta", methods=["POST"])
 def solicitar_consulta():
     db = get_db()
 
-    paciente_cpf = (session.get('cpf') or request.form.get('paciente_cpf') or '').replace('.', '').replace('-', '').strip()
-    cargo = (request.form.get('cargo') or '').strip()
-    medico_cpf = (request.form.get('medico_cpf') or '').replace('.', '').replace('-', '').strip()
-    data = request.form.get('data') or ''
-    hora = request.form.get('hora') or ''
-    tipo = request.form.get('tipo') or 'Consulta'
-    obs = request.form.get('observacoes') or ''
+    paciente_cpf = normalizar_cpf(
+        session.get("cpf") or request.form.get("paciente_cpf") or ""
+    )
+    cargo = (request.form.get("cargo") or "").strip()
+    medico_cpf = normalizar_cpf(request.form.get("medico_cpf") or "")
+    data = request.form.get("data") or ""
+    hora = request.form.get("hora") or ""
+    tipo = request.form.get("tipo") or "Consulta"
+    obs = request.form.get("observacoes") or ""
 
     if not paciente_cpf or not data or not hora or not cargo:
-        flash('Preencha Data, Hora e selecione um Cargo/Especialidade. Médico é opcional.', 'erro')
-        return redirect(url_for('agendapaciente', paciente_cpf=paciente_cpf))
+        flash(
+            "Preencha Data, Hora e selecione um Cargo/Especialidade. Médico é opcional.",
+            "erro",
+        )
+        return redirect(url_for("agendapaciente", paciente_cpf=paciente_cpf))
 
     cur = db.execute(
-        "SELECT 1 FROM usuarios WHERE CPF = ? AND tipo = 'paciente'",
-        (paciente_cpf,)
+        "SELECT 1 FROM usuarios WHERE CPF = ? AND tipo = ?",
+        (paciente_cpf, TIPO_PACIENTE),
     )
     if cur.fetchone() is None:
-        flash('Paciente inválido.', 'erro')
-        return redirect(url_for('agendapaciente', paciente_cpf=paciente_cpf))
+        flash("Paciente inválido.", "erro")
+        return redirect(url_for("agendapaciente", paciente_cpf=paciente_cpf))
 
-    # Médicos daquele cargo
-    medicos_do_cargo = [r for r in db.execute(
-        "SELECT * FROM usuarios WHERE tipo = 'medico' AND cargo = ?",
-        (cargo,)
-    ).fetchall()]
+    medicos_do_cargo = db.execute(
+        "SELECT * FROM usuarios WHERE tipo = ? AND cargo = ?",
+        (TIPO_MEDICO, cargo),
+    ).fetchall()
 
     if not medicos_do_cargo:
-        flash('Não há médicos cadastrados para o cargo selecionado.', 'erro')
-        return redirect(url_for('agendapaciente', paciente_cpf=paciente_cpf))
+        flash("Não há médicos cadastrados para o cargo selecionado.", "erro")
+        return redirect(url_for("agendapaciente", paciente_cpf=paciente_cpf))
 
     medico_escolhido = None
 
     if medico_cpf:
-        medico_escolhido = next((m for m in medicos_do_cargo if m['CPF'] == medico_cpf), None)
+        medico_escolhido = next(
+            (m for m in medicos_do_cargo if m["CPF"] == medico_cpf), None
+        )
         if not medico_escolhido:
-            flash('Médico inválido para o cargo selecionado.', 'erro')
-            return redirect(url_for('agendapaciente', paciente_cpf=paciente_cpf))
+            flash("Médico inválido para o cargo selecionado.", "erro")
+            return redirect(url_for("agendapaciente", paciente_cpf=paciente_cpf))
     else:
         medico_escolhido = medicos_do_cargo[0]
-        medico_cpf = medico_escolhido['CPF']
+        medico_cpf = medico_escolhido["CPF"]
 
-    # Insere como SOLICITADA
-    db.execute("""
+    db.execute(
+        """
         INSERT INTO consultas
             (paciente_cpf, medico_cpf, data, hora, tipo, status, observacoes, cargo)
-        VALUES (?,?,?,?,?,?,?,?)
-    """, (paciente_cpf, medico_cpf, data, hora, tipo, 'solicitada', obs, cargo))
-    db.commit()
-
-    flash(f'Solicitação enviada! Médico atribuído: {medico_escolhido["nome"]}.', 'ok')
-    adicionar_notificacao(paciente_cpf, "Sua consulta foi solicitada e aguarda aprovação.")
-    return redirect(url_for('agendapaciente', paciente_cpf=paciente_cpf))
-
-
-@app.route('/concluir_consulta', methods=['POST'])
-def concluir_consulta():
-    consulta_id = (request.form.get('id') or '').strip()
-    resumo = (request.form.get('resumo') or '').strip()
-    conclusao = (request.form.get('conclusao') or '').strip()
-
-    db = get_db()
-
-    cur = db.execute("SELECT * FROM consultas WHERE id = ?", (consulta_id,))
-    c = cur.fetchone()
-
-    if not c:
-        flash('Consulta não encontrada.', 'erro')
-        return redirect(url_for('agendamedico'))
-
-    # Só permite concluir se estiver AGENDADA
-    if c["status"] != 'agendada':
-        flash('Somente consultas agendadas podem ser concluídas.', 'erro')
-        return redirect(url_for('agendamedico'))
-
-    db.execute("""
-        UPDATE consultas
-           SET status    = 'concluida',
-               resumo    = ?,
-               conclusao = ?
-         WHERE id = ?
-    """, (resumo, conclusao, consulta_id))
-    db.commit()
-
-    flash('Consulta marcada como concluída e registrada no histórico.', 'ok')
-    adicionar_notificacao(c["paciente_cpf"], "Sua consulta foi concluída! Veja o resumo no histórico.")
-    return redirect(url_for('agendamedico'))
-
-
-
-
-# ========== Logout ==========
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    flash('Você saiu com sucesso.', 'ok')
-    return redirect(url_for('index'))
-
-
-# ========== Notificações ==========
-
-def adicionar_notificacao(cpf, texto):
-    db = get_db()
-    agora = datetime.now().strftime("%Y-%m-%d %H:%M")
-    db.execute(
-        "INSERT INTO notificacoes (cpf, texto, lida, data) VALUES (?,?,0,?)",
-        (cpf, texto, agora)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (paciente_cpf, medico_cpf, data, hora, tipo, STATUS_SOLICITADA, obs, cargo),
     )
     db.commit()
 
+    flash(
+        f'Solicitação enviada! Médico atribuído: {medico_escolhido["nome"]}.',
+        "ok",
+    )
+    adicionar_notificacao(
+        paciente_cpf,
+        "Sua consulta foi solicitada e aguarda aprovação.",
+    )
+    return redirect(url_for("agendapaciente", paciente_cpf=paciente_cpf))
+
+
+# ---------------------------------------------------------------------
+# Notificações (JSON para o front)
+# ---------------------------------------------------------------------
 
 @app.route("/notificacoes_count")
 def notificacoes_count():
@@ -765,8 +913,13 @@ def notificacoes_count():
 
     db = get_db()
     cur = db.execute(
-        "SELECT COUNT(*) AS qtd FROM notificacoes WHERE cpf = ? AND lida = 0",
-        (cpf,)
+        """
+        SELECT COUNT(*) AS qtd
+          FROM notificacoes
+         WHERE cpf = ?
+           AND lida = 0
+        """,
+        (cpf,),
     )
     row = cur.fetchone()
     return {"count": row["qtd"] if row else 0}
@@ -779,12 +932,15 @@ def notificacoes_lista():
         return jsonify([])
 
     db = get_db()
-    cur = db.execute("""
+    cur = db.execute(
+        """
         SELECT texto, lida, data
           FROM notificacoes
          WHERE cpf = ?
          ORDER BY data DESC
-    """, (cpf,))
+        """,
+        (cpf,),
+    )
     notificacoes = [dict(r) for r in cur.fetchall()]
     return jsonify(notificacoes)
 
@@ -801,9 +957,11 @@ def notificacoes_marcar_lidas():
     return ("", 204)
 
 
-# ========== Main ==========
+# ---------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     with app.app_context():
         init_db()
         inicializar_usuarios_fixos()

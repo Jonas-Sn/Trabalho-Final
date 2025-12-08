@@ -2,173 +2,112 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Minha Agenda - Paciente</title>
+  <title>VidaPlus - Agenda do Paciente</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="{{ url_for('static', filename='styledash.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    .content { padding: 20px; }
+    .content {
+      padding: 20px;
+    }
+
     .box {
-      background:#fff;
-      padding:15px;
-      border-radius:8px;
-      box-shadow:0 0 5px rgba(0,0,0,.1);
-      margin-bottom:20px;
-    }
-    table { width:100%; border-collapse:collapse; }
-    th, td { border:1px solid #eee; padding:10px; text-align:left; }
-    th { background:#f5f5f5; }
-    .msg { margin:10px 0; border-radius:6px; padding:8px 12px; font-size:0.9rem; }
-    .msg.ok { color:#155724; background:#d4edda; border:1px solid #c3e6cb; }
-    .msg.erro { color:#721c24; background:#f8d7da; border:1px solid #f5c6cb; }
-
-    .grid {
-      display:grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap:10px;
-      align-items:flex-end;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, .1);
+      margin-bottom: 20px;
     }
 
-    .grid > div:last-child {
-      display:flex;
-      align-items:flex-end;
-      justify-content:flex-end;
+    table {
+      width: 100%;
+      border-collapse: collapse;
     }
 
-    .btn {
-      border:none;
-      padding:8px 12px;
-      border-radius:6px;
-      cursor:pointer;
-      background:#0a74da;
-      color:#fff;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      font-size:0.9rem;
+    th,
+    td {
+      border: 1px solid #eee;
+      padding: 10px;
+      text-align: left;
+      font-size: 0.9rem;
     }
 
-    input, select {
-      width:100%;
-      padding:8px;
-      border-radius:6px;
-      border:1px solid #ddd;
-      box-sizing:border-box;
-      font-size:0.9rem;
+    th {
+      background: #f5f5f5;
+      font-weight: 600;
+    }
+
+    .msg {
+      margin: 10px 0;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+    }
+
+    .msg.ok {
+      color: #155724;
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+    }
+
+    .msg.erro {
+      color: #721c24;
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      box-sizing: border-box;
+      font-size: 0.9rem;
     }
 
     label {
-      display:block;
-      margin-bottom:4px;
-      font-size:0.9rem;
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.9rem;
     }
 
     small.hint {
-      display:block;
-      font-size:0.75rem;
-      color:#777;
-      margin-top:2px;
+      display: block;
+      font-size: 0.75rem;
+      color: #777;
+      margin-top: 2px;
     }
 
-    /* Deixa mais orientado por passos */
+    .btn {
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #0a74da;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+
     .form-steps-hint {
-      font-size:0.8rem;
-      color:#555;
-      margin-bottom:10px;
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 10px;
     }
 
     .form-steps-hint strong {
-      color:#0a74da;
+      color: #0a74da;
     }
 
-    /* Sino e painel de notificações */
-    .topbar .icons {
-      position:relative;
-      cursor:pointer;
-    }
-
-    .notif-badge {
-      position:absolute;
-      top:-4px;
-      right:-4px;
-      background:#dc3545;
-      color:#fff;
-      border-radius:999px;
-      padding:2px 6px;
-      font-size:0.65rem;
-      display:none;
-    }
-
-    .notif-panel {
-      position:absolute;
-      top:32px;
-      right:0;
-      width:260px;
-      max-height:320px;
-      background:#fff;
-      border-radius:8px;
-      box-shadow:0 4px 15px rgba(0,0,0,0.15);
-      overflow-y:auto;
-      display:none;
-      z-index:50;
-    }
-
-    .notif-panel.active {
-      display:block;
-    }
-
-    .notif-item {
-      padding:8px 10px;
-      border-bottom:1px solid #f1f1f1;
-      font-size:0.85rem;
-    }
-
-    .notif-item:last-child {
-      border-bottom:none;
-    }
-
-    .notif-item small {
-      display:block;
-      color:#777;
-      margin-top:2px;
-    }
-
-    .notif-empty {
-      padding:10px;
-      text-align:center;
-      font-size:0.85rem;
-      color:#777;
-    }
-
-    /* ========= MOBILE – deixa 1 campo por linha e botão grandão ========= */
-    @media (max-width: 768px) {
-
-      /* Form em coluna, bem sequencial */
-      .grid {
-        display:flex;
-        flex-direction:column;
-        gap:10px;
-      }
-
-      .grid > div:last-child {
-        justify-content:flex-start;
-      }
-
-      .btn {
-        width:100%;
-        justify-content:center;
-        padding:10px 14px;
-        font-size:1rem;
-      }
-    }
-
-    /* ===== NOVO layout do formulário de solicitação (cards por passo) ===== */
-
+    /* Form de solicitação em "passos" */
     .solicita-form {
       max-width: 480px;
-      margin: 0 auto;              /* centraliza dentro da box */
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -219,7 +158,6 @@
       color: #555;
     }
 
-    /* linha do botão */
     .solicita-form .btn-row {
       margin-top: 4px;
     }
@@ -230,7 +168,71 @@
       padding: 10px 14px;
     }
 
-    /* Desktop: cards lado a lado e botão alinhado à direita */
+    /* Notificações (sino) */
+    .topbar .icons {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #dc3545;
+      color: #fff;
+      border-radius: 999px;
+      padding: 2px 6px;
+      font-size: 0.65rem;
+      display: none;
+    }
+
+    .notif-panel {
+      position: absolute;
+      top: 32px;
+      right: 0;
+      width: 260px;
+      max-height: 320px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      overflow-y: auto;
+      display: none;
+      z-index: 50;
+    }
+
+    .notif-panel.active {
+      display: block;
+    }
+
+    .notif-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f1f1;
+      font-size: 0.85rem;
+    }
+
+    .notif-item:last-child {
+      border-bottom: none;
+    }
+
+    .notif-item span {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .notif-item small {
+      display: block;
+      color: #777;
+      margin-top: 2px;
+    }
+
+    .notif-empty {
+      padding: 10px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #777;
+    }
+
+    /* Responsivo */
     @media (min-width: 769px) {
       .solicita-form {
         max-width: 900px;
@@ -251,8 +253,20 @@
         width: 100%;
       }
     }
-  </style>
 
+    @media (max-width: 768px) {
+      .solicita-form {
+        max-width: 100%;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 14px;
+        font-size: 1rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <aside class="sidebar">
@@ -260,10 +274,10 @@
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo VidaPlus">
     </div>
     <nav class="menu">
-      <a class="active" href="#"><i class="fas fa-calendar-alt"></i></a>
+      <a class="active" href="{{ url_for('agendapaciente') }}"><i class="fas fa-calendar-alt"></i></a>
       <a href="#"><i class="fas fa-user"></i></a>
       <div class="config">
-        <a href="config.html"><i class="fas fa-cog"></i></a>
+        <a href="#"><i class="fas fa-cog"></i></a>
       </div>
     </nav>
   </aside>
@@ -274,40 +288,26 @@
       <div class="icons" id="notifIcon">
         <i class="fas fa-bell"></i>
         <span class="notif-badge" id="notifBadge">0</span>
-
-        <div class="notif-panel" id="notifPanel">
-          <!-- preenchido via JS -->
-        </div>
+        <div class="notif-panel" id="notifPanel"></div>
       </div>
     </header>
 
     <section class="content">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="msgwrap">
-            {% for cat, msg in messages %}
-              <div class="msg {{ cat }}">{{ msg }}</div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-
-      <!-- ========== FORMULÁRIO DE SOLICITAÇÃO ========== -->
+      <!-- Formulário de solicitação -->
       <div class="box">
-        <h3>Solicitar Consulta</h3>
+        <h3>Solicitar consulta</h3>
         <p class="form-steps-hint">
-          1) Escolha a <strong>especialidade</strong> · 
-          2) (Opcional) escolha o <strong>médico</strong> · 
-          3) Selecione <strong>data</strong> e <strong>horário</strong> · 
-          4) Descreva o motivo da consulta.
+          1) Escolha a <strong>especialidade</strong> ·
+          2) (Opcional) escolha o <strong>médico</strong> ·
+          3) Selecione <strong>data</strong> e <strong>horário</strong> ·
+          4) Informe o <strong>motivo</strong> da consulta.
         </p>
 
         <form method="POST" action="{{ url_for('solicitar_consulta') }}" class="solicita-form">
-          <!-- CPF do paciente (hidden, vindo da sessão/rota) -->
           <input type="hidden" name="paciente_cpf" value="{{ paciente_cpf }}">
 
           <div class="steps-container">
-            <!-- PASSO 1: Profissional -->
+            <!-- Passo 1: Profissional -->
             <div class="step-card">
               <div class="step-header">
                 <span class="step-number">1</span>
@@ -318,7 +318,7 @@
               </div>
 
               <div>
-                <label for="cargo">Cargo / Especialidade *</label>
+                <label for="cargo">Cargo / especialidade *</label>
                 <select name="cargo" id="cargo" required>
                   <option value="">Selecione o cargo...</option>
                   {% for cargo in cargos %}
@@ -328,7 +328,7 @@
                 <small class="hint"></small>
               </div>
 
-              <div style="margin-top:8px;">
+              <div style="margin-top: 8px;">
                 <label for="medico_cpf">Médico (opcional)</label>
                 <select name="medico_cpf" id="medico_cpf">
                   <option value="">Não escolher médico (atribuir automaticamente)</option>
@@ -342,7 +342,7 @@
               </div>
             </div>
 
-            <!-- PASSO 2: Data e horário -->
+            <!-- Passo 2: Data e horário -->
             <div class="step-card">
               <div class="step-header">
                 <span class="step-number">2</span>
@@ -353,19 +353,19 @@
               </div>
 
               <div>
-                <label>Data</label>
-                <input type="date" name="data" required>
+                <label for="data">Data</label>
+                <input type="date" id="data" name="data" required>
               </div>
 
-              <div style="margin-top:8px;">
-                <label>Hora</label>
+              <div style="margin-top: 8px;">
+                <label for="hora">Hora</label>
                 <select name="hora" id="hora" required>
                   <option value="">Selecione cargo, médico (opcional) e data</option>
                 </select>
               </div>
             </div>
 
-            <!-- PASSO 3: Tipo e observações -->
+            <!-- Passo 3: Motivo -->
             <div class="step-card">
               <div class="step-header">
                 <span class="step-number">3</span>
@@ -376,21 +376,25 @@
               </div>
 
               <div>
-                <label>Tipo</label>
-                <select name="tipo">
+                <label for="tipo">Tipo</label>
+                <select name="tipo" id="tipo">
                   <option value="Consulta">Consulta</option>
                   <option value="Retorno">Retorno</option>
                 </select>
               </div>
 
-              <div style="margin-top:8px;">
-                <label>Observações</label>
-                <input type="text" name="observacoes" placeholder="Ex: dor de cabeça, retorno, etc.">
+              <div style="margin-top: 8px;">
+                <label for="observacoes">Observações</label>
+                <input
+                  type="text"
+                  id="observacoes"
+                  name="observacoes"
+                  placeholder="Ex: dor de cabeça, retorno, etc."
+                >
               </div>
             </div>
           </div>
 
-          <!-- Botão -->
           <div class="btn-row">
             <button type="submit" class="btn">
               <i class="fas fa-paper-plane"></i> Enviar solicitação
@@ -399,9 +403,9 @@
         </form>
       </div>
 
-      <!-- ========== LISTA DE CONSULTAS ========== -->
+      <!-- Lista de consultas -->
       <div class="box">
-        <h3>Minhas Consultas</h3>
+        <h3>Minhas consultas</h3>
         <table>
           <thead>
             <tr>
@@ -417,18 +421,18 @@
           </thead>
           <tbody>
             {% for c in consultas %}
-            <tr>
-              <td data-label="Data">{{ c.data }}</td>
-              <td data-label="Hora">{{ c.hora }}</td>
-              <td data-label="Médico">{{ c.medico_nome if c.medico_nome else '—' }}</td>
-              <td data-label="Tipo">{{ c.tipo }}</td>
-              <td data-label="Status">{{ c.status.capitalize() }}</td>
-              <td data-label="Obs.">{{ c.observacoes }}</td>
-              <td data-label="Resumo">{{ c.resumo if c.resumo else '—' }}</td>
-              <td data-label="Conclusão">{{ c.conclusao if c.conclusao else '—' }}</td>
-            </tr>
+              <tr>
+                <td data-label="Data">{{ c.data }}</td>
+                <td data-label="Hora">{{ c.hora }}</td>
+                <td data-label="Médico">{{ c.medico_nome if c.medico_nome else "—" }}</td>
+                <td data-label="Tipo">{{ c.tipo }}</td>
+                <td data-label="Status">{{ c.status.capitalize() }}</td>
+                <td data-label="Obs.">{{ c.observacoes }}</td>
+                <td data-label="Resumo">{{ c.resumo if c.resumo else "—" }}</td>
+                <td data-label="Conclusão">{{ c.conclusao if c.conclusao else "—" }}</td>
+              </tr>
             {% else %}
-            <tr><td colspan="8">Você ainda não possui consultas.</td></tr>
+              <tr><td colspan="8">Você ainda não possui consultas.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -436,20 +440,23 @@
     </section>
   </main>
 
-  <!-- MENU DE CONFIGURAÇÕES -->
+  <!-- Menu de configurações -->
   <div id="settingsMenu" class="settings-menu">
     <ul>
       <li><i class="fas fa-user"></i> Perfil</li>
-      <li><i class="fas fa-right-from-bracket"></i> <a href="{{ url_for('logout') }}">Sair</a></li>
+      <li>
+        <i class="fas fa-right-from-bracket"></i>
+        <a href="{{ url_for('logout') }}">Sair</a>
+      </li>
     </ul>
   </div>
 
-  <!-- Som de notificação (coloque um arquivo em static/sounds/notify.mp3) -->
+  <!-- Som de notificação -->
   <audio id="notifSound" src="{{ url_for('static', filename='sounds/notify.mp3') }}" preload="auto"></audio>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // ===== Menu de configurações =====
+      // Menu de configurações
       const configButton = document.querySelector(".config a");
       const settingsMenu = document.getElementById("settingsMenu");
 
@@ -466,17 +473,17 @@
         });
       }
 
-      // ===== Filtrar médicos por cargo =====
+      // Filtra médicos por cargo
       const cargoSelect = document.getElementById("cargo");
       const medicoSelect = document.getElementById("medico_cpf");
 
       if (cargoSelect && medicoSelect) {
-        const todasOpcoes = Array.from(medicoSelect.options); // inclui a opção padrão
+        const todasOpcoes = Array.from(medicoSelect.options);
 
         cargoSelect.addEventListener("change", () => {
           const cargoEscolhido = cargoSelect.value;
-
           medicoSelect.innerHTML = "";
+
           const optPadrao = document.createElement("option");
           optPadrao.value = "";
           optPadrao.textContent = "Não escolher médico (atribuir automaticamente)";
@@ -484,7 +491,7 @@
 
           if (!cargoEscolhido) return;
 
-          todasOpcoes.forEach(opt => {
+          todasOpcoes.forEach((opt) => {
             const cargoOpt = opt.getAttribute("data-cargo");
             if (cargoOpt && cargoOpt === cargoEscolhido) {
               medicoSelect.appendChild(opt.cloneNode(true));
@@ -493,11 +500,11 @@
         });
       }
 
-      // ===== HORÁRIOS DISPONÍVEIS (PACIENTE) =====
-      const dataInput  = document.querySelector("input[name='data']");
-      const cargoSelect2  = document.getElementById("cargo");
+      // Horários disponíveis
+      const dataInput = document.getElementById("data");
+      const cargoSelect2 = document.getElementById("cargo");
       const medicoSelect2 = document.getElementById("medico_cpf");
-      const horaSelect2   = document.getElementById("hora");
+      const horaSelect2 = document.getElementById("hora");
 
       async function carregarHorariosPaciente() {
         if (!dataInput.value) {
@@ -509,7 +516,7 @@
         params.append("data", dataInput.value);
 
         const medicoCpf = (medicoSelect2.value || "").replace(/\D/g, "");
-        const cargoSel  = cargoSelect2.value || "";
+        const cargoSel = cargoSelect2.value || "";
 
         if (medicoCpf) {
           params.append("medico_cpf", medicoCpf);
@@ -546,7 +553,7 @@
           optPadrao.selected = true;
           horaSelect2.appendChild(optPadrao);
 
-          horarios.forEach(h => {
+          horarios.forEach((h) => {
             const opt = document.createElement("option");
             opt.value = h;
             opt.textContent = h;
@@ -563,14 +570,14 @@
         medicoSelect2.addEventListener("change", carregarHorariosPaciente);
       }
 
-      // ===== Notificações (sino) =====
-      const notifIcon   = document.getElementById("notifIcon");
-      const notifBadge  = document.getElementById("notifBadge");
-      const notifPanel  = document.getElementById("notifPanel");
-      const notifSound  = document.getElementById("notifSound");
+      // Notificações
+      const notifIcon = document.getElementById("notifIcon");
+      const notifBadge = document.getElementById("notifBadge");
+      const notifPanel = document.getElementById("notifPanel");
+      const notifSound = document.getElementById("notifSound");
       let notifCountAtual = 0;
 
-      async function atualizarContadorNotificacoes(tocarSomSeNovo=true) {
+      async function atualizarContadorNotificacoes(tocarSomSeNovo = true) {
         try {
           const resp = await fetch("{{ url_for('notificacoes_count') }}");
           if (!resp.ok) return;
@@ -585,7 +592,6 @@
           }
 
           if (tocarSomSeNovo && count > notifCountAtual && notifSound) {
-            // tenta tocar o som (pode ser bloqueado pelo navegador se não tiver interação)
             notifSound.play().catch(() => {});
           }
           notifCountAtual = count;
@@ -608,12 +614,15 @@
             div.textContent = "Nenhuma notificação no momento.";
             notifPanel.appendChild(div);
           } else {
-            lista.forEach(n => {
+            lista.forEach((n) => {
+              const texto = n.texto || n.mensagem || "Notificação recebida.";
+              const data = n.data || "";
+
               const item = document.createElement("div");
               item.className = "notif-item";
               item.innerHTML = `
-                <span>${n.texto}</span>
-                <small>${n.data || ""}</small>
+                <span>${texto}</span>
+                <small>${data}</small>
               `;
               notifPanel.appendChild(item);
             });
@@ -621,10 +630,10 @@
 
           // marca como lidas
           fetch("{{ url_for('notificacoes_marcar_lidas') }}", {
-            method: "POST"
-          }).then(() => {
-            atualizarContadorNotificacoes(false);
-          }).catch(() => {});
+            method: "POST",
+          })
+            .then(() => atualizarContadorNotificacoes(false))
+            .catch(() => {});
         } catch (e) {
           console.error("Erro ao carregar notificações:", e);
         }
@@ -647,11 +656,9 @@
         });
       }
 
-      // Atualiza contador periodicamente
       atualizarContadorNotificacoes(false);
-      setInterval(() => atualizarContadorNotificacoes(true), 30000); // a cada 30s
+      setInterval(() => atualizarContadorNotificacoes(true), 30000);
     });
   </script>
-
 </body>
 </html>

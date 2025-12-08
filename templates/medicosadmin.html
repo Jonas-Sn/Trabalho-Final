@@ -4,61 +4,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Médicos - Administrador</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='styledash.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    .content {
-      padding: 20px;
+    body {
+      background-color: #f4f6f9;
+      font-family: Arial, sans-serif;
     }
 
-    /* FLASH MESSAGES BONITAS */
-    .flash-container {
+    .content {
+      padding: 20px 25px;
+    }
+
+    /* Mensagens flash */
+    .msgwrap {
       margin-bottom: 15px;
     }
-
-    .alert {
-      padding: 10px 14px;
+    .msg {
+      padding: 8px 10px;
       border-radius: 6px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-size: 0.9rem;
       display: flex;
       align-items: center;
       gap: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.06);
     }
-
-    .alert.ok {
+    .msg.ok {
       background: #e6f4ea;
       color: #1e7e34;
       border-left: 4px solid #28a745;
     }
-
-    .alert.erro {
+    .msg.erro {
       background: #fdecea;
       color: #b02a37;
       border-left: 4px solid #dc3545;
     }
-
-    .alert i {
+    .msg i {
       font-size: 1rem;
     }
 
+    /* Busca */
     .search-box {
-      display: flex;
-      justify-content: space-between;
       margin-bottom: 20px;
-      margin-top: 5px;
+      background: #fff;
+      padding: 15px 18px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
-
+    .search-box form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
     .search-box input {
-      width: 70%;
-      padding: 8px;
+      flex: 1;
+      min-width: 220px;
+      padding: 8px 10px;
       border: 1px solid #ccc;
       border-radius: 5px;
+      font-size: 0.9rem;
     }
-
     .search-box button {
       padding: 8px 15px;
       border: none;
@@ -66,57 +74,28 @@
       color: white;
       border-radius: 5px;
       cursor: pointer;
-    }
-
-    .new-client {
-      margin-top: 30px;
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-
-    .new-client input,
-    .new-client select,
-    .new-client button {
-      display: block;
-      margin-bottom: 10px;
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
-    }
-
-    .new-client input,
-    .new-client select {
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-
-    .new-client button {
-      background-color: #0a74da;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .new-client label {
       font-size: 0.9rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-      display: block;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .search-box button:hover {
+      background-color: #095caa;
     }
 
-    .new-client .field-group {
-      margin-bottom: 12px;
-    }
-
-    /* Cards + carrossel */
+    /* Cards + carrossel de médicos */
     .clientes-section {
       position: relative;
-      display: flex;
-      align-items: center;
-      margin-top: 20px;
+      margin-top: 10px;
+      margin-bottom: 25px;
+    }
+
+    .clientes-section h3 {
+      margin-bottom: 10px;
+      color: #333;
+      border-left: 4px solid #0a74da;
+      padding-left: 8px;
+      font-size: 1.05rem;
     }
 
     .scroll-btn {
@@ -124,36 +103,33 @@
       color: white;
       border: none;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       cursor: pointer;
-      font-size: 18px;
+      font-size: 16px;
       position: absolute;
-      top: 45%;
+      top: 55%;
       transform: translateY(-50%);
       z-index: 2;
       transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-
     .scroll-btn:hover {
       background-color: #005bb5;
     }
-
     .scroll-btn.left {
-      left: -20px;
+      left: -10px;
     }
-
     .scroll-btn.right {
-      right: -20px;
+      right: -10px;
     }
 
     .clientes-container {
       overflow-x: hidden;
-      white-space: nowrap;
       padding-bottom: 10px;
-      margin-top: 20px;
-      scrollbar-width: thin;
-      scrollbar-color: #0a74da #f1f1f1;
+      margin-top: 10px;
       width: 100%;
     }
 
@@ -172,38 +148,46 @@
       background: white;
       border-radius: 8px;
       padding: 15px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
       width: 220px;
       text-align: left;
-      transition: transform 0.2s;
+      transition: transform 0.15s;
+      border: 1px solid #eef0f3;
     }
-
     .cliente-card:hover {
-      transform: scale(1.05);
+      transform: translateY(-2px);
     }
-
     .cliente-card h4 {
-      margin-bottom: 8px;
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: #111827;
     }
-
     .cliente-card p {
       margin: 3px 0;
       font-size: 0.9rem;
+      color: #4b5563;
+    }
+
+    .btn-edit,
+    .btn-remove {
+      border: none;
+      border-radius: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-top: 6px;
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color 0.18s;
     }
 
     .btn-edit {
       background-color: rgb(0, 195, 255);
       color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: 14px;
-      margin-top: 8px;
-      width: 100%;
-      transition: background-color 0.2s;
     }
-
     .btn-edit:hover {
       background-color: rgb(0, 89, 116);
     }
@@ -211,18 +195,64 @@
     .btn-remove {
       background-color: #dc3545;
       color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: 14px;
-      margin-top: 8px;
-      width: 100%;
-      transition: background-color 0.2s;
     }
-
     .btn-remove:hover {
       background-color: #b02a37;
+    }
+
+    /* Bloco novo médico */
+    .new-client {
+      margin-top: 10px;
+      background-color: #fff;
+      padding: 20px 18px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+
+    .new-client h3 {
+      margin: 0 0 10px;
+      color: #333;
+      border-left: 4px solid #0a74da;
+      padding-left: 8px;
+      font-size: 1.05rem;
+    }
+
+    .new-client .field-group {
+      margin-bottom: 12px;
+    }
+
+    .new-client label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .new-client input,
+    .new-client select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      font-size: 0.9rem;
+    }
+
+    .new-client button {
+      margin-top: 5px;
+      background-color: #0a74da;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .new-client button:hover {
+      background-color: #095caa;
     }
 
     /* Modal de edição */
@@ -236,7 +266,6 @@
       align-items: center;
       z-index: 1000;
     }
-
     .editar-modal.active {
       display: flex;
     }
@@ -253,46 +282,56 @@
       text-align: center;
       margin-bottom: 15px;
       color: #0a74da;
+      font-size: 1.1rem;
     }
 
     .editar-box label {
       font-weight: bold;
-      margin-top: 10px;
+      margin-top: 8px;
       display: block;
+      font-size: 0.9rem;
     }
 
     .editar-box input,
     .editar-box select {
       width: 100%;
-      padding: 8px;
+      padding: 8px 10px;
       border: 1px solid #ccc;
       border-radius: 6px;
-      margin-bottom: 10px;
+      margin-top: 2px;
+      margin-bottom: 8px;
       box-sizing: border-box;
+      font-size: 0.9rem;
     }
 
     .botoes-editar {
       display: flex;
       justify-content: space-between;
       gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn-salvar,
+    .btn-cancelar {
+      flex: 1;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
     .btn-salvar {
       background: #28a745;
       color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
     }
-
     .btn-cancelar {
       background: #dc3545;
       color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -309,7 +348,7 @@
       <a href="{{ url_for('medicosadmin') }}" class="active"><i class="fas fa-user-md"></i></a>
       <a href="#"><i class="fas fa-dollar-sign"></i></a>
       <div class="config">
-        <a href="config.html"><i class="fas fa-cog"></i></a>
+        <a href="#"><i class="fas fa-cog"></i></a>
       </div>
     </nav>
   </aside>
@@ -325,33 +364,26 @@
 
     <section class="content">
 
-      <!-- MENSAGENS FLASH BONITAS -->
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="flash-container">
-            {% for cat, msg in messages %}
-              <div class="alert {{ cat }}">
-                <i class="fas fa-info-circle"></i>
-                <span>{{ msg }}</span>
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-
       <!-- BUSCA -->
       <div class="search-box">
         <form method="GET" action="{{ url_for('medicosadmin') }}">
-          <input type="text" name="busca"
-                 placeholder="Pesquisar por nome ou CPF..."
-                 value="{{ request.args.get('busca', '') }}">
-          <button type="submit">🔍 Buscar</button>
+          <input
+            type="text"
+            name="busca"
+            placeholder="Pesquisar por nome ou CPF..."
+            value="{{ request.args.get('busca', '') }}"
+          >
+          <button type="submit">
+            <i class="fas fa-search"></i> Buscar
+          </button>
         </form>
       </div>
 
       <!-- CARDS DE MÉDICOS -->
       <div class="clientes-section">
-        <button class="scroll-btn left" onclick="scrollClientes(-1)">
+        <h3>Médicos cadastrados</h3>
+
+        <button class="scroll-btn left" type="button" onclick="scrollClientes(-1)">
           <i class="fas fa-chevron-left"></i>
         </button>
 
@@ -379,9 +411,11 @@
                 </button>
 
                 <!-- Botão Remover -->
-                <form action="{{ url_for('remover_medico') }}"
-                      method="POST"
-                      onsubmit="return confirm('Deseja remover este Médico?')">
+                <form
+                  action="{{ url_for('remover_medico') }}"
+                  method="POST"
+                  onsubmit="return confirm('Deseja remover este médico?')"
+                >
                   <input type="hidden" name="CPF" value="{{ u.CPF }}">
                   <button type="submit" class="btn-remove">
                     <i class="fas fa-trash"></i> Remover
@@ -395,41 +429,43 @@
           {% endif %}
         </div>
 
-        <button class="scroll-btn right" onclick="scrollClientes(1)">
+        <button class="scroll-btn right" type="button" onclick="scrollClientes(1)">
           <i class="fas fa-chevron-right"></i>
         </button>
       </div>
 
       <!-- CADASTRAR NOVO MÉDICO -->
       <div class="new-client">
-        <h3>Cadastrar Novo Médico</h3>
+        <h3>Novo médico</h3>
         <form action="{{ url_for('novo_medico') }}" method="POST">
           <div class="field-group">
-            <label>Nome completo</label>
-            <input type="text" name="nome" placeholder="Nome completo" required>
+            <label for="nome_medico">Nome completo</label>
+            <input type="text" id="nome_medico" name="nome" required>
           </div>
 
           <div class="field-group">
-            <label>Cargo / Especialidade</label>
-            <select name="cargo" required>
+            <label for="cargo_medico">Cargo / especialidade</label>
+            <select id="cargo_medico" name="cargo" required>
               <option value="">Selecione um cargo</option>
-              <option value="Clinico Geral">Clínico Geral</option>
+              <option value="Clínico Geral">Clínico Geral</option>
               <option value="Pediatra">Pediatra</option>
               <option value="Nutricionista">Nutricionista</option>
             </select>
           </div>
 
           <div class="field-group">
-            <label>CPF</label>
-            <input type="text" name="CPF" placeholder="CPF (somente números)" required maxlength="11">
+            <label for="cpf_medico">CPF (somente números)</label>
+            <input type="text" id="cpf_medico" name="CPF" maxlength="11" required>
           </div>
 
           <div class="field-group">
-            <label>Senha</label>
-            <input type="password" name="senha" placeholder="Senha" required>
+            <label for="senha_medico">Senha</label>
+            <input type="password" id="senha_medico" name="senha" required>
           </div>
 
-          <button type="submit">Salvar Médico</button>
+          <button type="submit">
+            <i class="fas fa-save"></i> Salvar médico
+          </button>
         </form>
       </div>
 
@@ -439,26 +475,26 @@
   <!-- MODAL DE EDIÇÃO -->
   <div id="editarModal" class="editar-modal">
     <div class="editar-box">
-      <h3>Editar Médico</h3>
+      <h3>Editar médico</h3>
       <form id="formEditar" method="POST" action="{{ url_for('salvar_edicao_cliente') }}">
         <input type="hidden" name="cpf_original" id="cpf_original">
 
-        <label>Nome</label>
+        <label for="editar_nome">Nome</label>
         <input type="text" name="nome" id="editar_nome" required>
 
-        <label>CPF</label>
+        <label for="editar_cpf">CPF</label>
         <input type="text" name="CPF" id="editar_cpf" maxlength="14" required>
 
-        <label>Tipo</label>
+        <label for="editar_tipo">Tipo</label>
         <select name="tipo" id="editar_tipo">
           <option value="paciente">Paciente</option>
           <option value="medico">Médico</option>
           <option value="admin">Administrador</option>
         </select>
 
-        <label>Cargo</label>
+        <label for="editar_cargo">Cargo / especialidade</label>
         <select name="cargo" id="editar_cargo">
-          <option value="Clinico Geral">Clínico Geral</option>
+          <option value="Clínico Geral">Clínico Geral</option>
           <option value="Pediatra">Pediatra</option>
           <option value="Nutricionista">Nutricionista</option>
         </select>
@@ -507,8 +543,14 @@
       document.getElementById('cpf_original').value = cpf.replace(/\D/g, '');
       document.getElementById('editar_nome').value  = nome;
       document.getElementById('editar_cpf').value   = cpf.replace(/\D/g, '');
-      document.getElementById('editar_tipo').value  = (tipo || '').toLowerCase();
-      document.getElementById('editar_cargo').value = cargo || 'Clinico Geral';
+
+      const tipoSelect  = document.getElementById('editar_tipo');
+      const cargoSelect = document.getElementById('editar_cargo');
+
+      tipoSelect.value = (tipo || '').toLowerCase();
+      if (cargoSelect && cargo) {
+        cargoSelect.value = cargo;
+      }
 
       document.getElementById('editarModal').classList.add('active');
     }
@@ -518,8 +560,8 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      // máscara CPF no modal
       const cpfInput = document.getElementById('editar_cpf');
-
       if (cpfInput) {
         cpfInput.addEventListener('input', () => {
           let value = cpfInput.value.replace(/\D/g, '');
@@ -532,6 +574,7 @@
         });
       }
 
+      // menu de configurações
       const configButton = document.querySelector(".config a");
       const settingsMenu = document.getElementById("settingsMenu");
 

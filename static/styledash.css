@@ -7,12 +7,13 @@
 
 body {
   display: flex;
-  min-height: 100vh; /* Permite crescer conforme o conteúdo */
-  overflow-y: auto;  /* Adiciona scroll se precisar */
+  min-height: 100vh;
+  overflow-y: auto;
   overflow-x: hidden;
+  background-color: #f5f7fb;
 }
 
-/* --- Barra lateral --- */
+/* Lateral */
 .sidebar {
   width: 70px;
   background-color: #52b9fa;
@@ -20,21 +21,20 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 15px 0;
-  position: fixed;       /* fixa a barra na lateral esquerda */
+  position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;         /* ocupa toda a altura da janela */
-  z-index: 100;          /* fica acima do conteúdo */
+  height: 100vh;
+  z-index: 100;
+}
+
+.sidebar .logo {
+  margin-bottom: 18px;
 }
 
 .sidebar .logo img {
   width: 50px;
   height: auto;
-}
-
-.sidebar .logo {
-  margin-bottom: 15px;
-  margin-top: 1px;
 }
 
 .sidebar .menu {
@@ -52,29 +52,34 @@ body {
 
 .sidebar .menu a,
 .sidebar .config a {
-  color: white;
+  color: #fff;
   font-size: 20px;
-  margin: 15px 0;
-  transition: 0.3s;
+  margin: 10px 0;
+  transition: color 0.2s, transform 0.1s;
 }
 
 .sidebar .menu a:hover,
 .sidebar .config a:hover {
   color: #d9eaff;
+  transform: translateY(-1px);
 }
 
-/* --- Área principal --- */
+/* item ativo */
+.sidebar .menu a.active {
+  color: #004c7f;
+}
+
+/* Área principal */
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   background-color: #ffffff;
-  overflow-y: auto;  /* Garante que o conteúdo role */
-  height: auto;
-  margin-left: 70px;     /* distância igual à largura da sidebar */
+  overflow-y: auto;
+  margin-left: 70px;
 }
 
-/* --- Barra superior --- */
+/* Topo */
 .topbar {
   height: 50px;
   background-color: #009dff;
@@ -82,13 +87,18 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 15px;
+  color: #fff;
+}
+
+.topbar h2 {
+  font-size: 18px;
+  font-weight: normal;
 }
 
 .search-area {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: white;
 }
 
 .search-area input {
@@ -96,6 +106,7 @@ body {
   padding: 5px 8px;
   border-radius: 5px;
   outline: none;
+  font-size: 13px;
 }
 
 .icons i {
@@ -104,37 +115,37 @@ body {
   cursor: pointer;
 }
 
-/* --- Conteúdo central --- */
+/* Conteúdo */
 .content {
   flex: 1;
-  padding: 40px;
-  background-color: white;
+  padding: 30px 40px;
+  background-color: #ffffff;
 }
 
 .content h1 {
-  font-size: 24px;
+  font-size: 22px;
   margin-bottom: 8px;
 }
 
 .content p {
-  font-size: 16px;
+  font-size: 15px;
   color: #555;
 }
 
-/* ===== Menu de Configurações ===== */
+/* Menu de configurações */
 .settings-menu {
   position: absolute;
-  left: 80px; /* aparece ao lado da barra */
-  bottom: 80px; /* alinha com o ícone */
+  left: 80px;
+  bottom: 80px;
   width: 180px;
   background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
   padding: 10px;
-  transform: scale(0.8);
+  transform: scale(0.9);
   opacity: 0;
   pointer-events: none;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   z-index: 200;
 }
 
@@ -146,8 +157,6 @@ body {
 
 .settings-menu ul {
   list-style: none;
-  margin: 0;
-  padding: 0;
 }
 
 .settings-menu li {
@@ -159,6 +168,7 @@ body {
   cursor: pointer;
   border-radius: 5px;
   transition: background 0.2s;
+  font-size: 14px;
 }
 
 .settings-menu li:hover {
@@ -176,23 +186,20 @@ body {
 
 @media (max-width: 768px) {
 
-  /* body em COLUNA (sidebar em cima, conteúdo embaixo) */
   body {
     flex-direction: column;
   }
 
-  /* Sidebar vira barra superior */
   .sidebar {
     position: relative;
     width: 100%;
     height: auto;
-    padding: 10px 12px;
+    padding: 8px 12px;
     flex-direction: row;
     justify-content: center;
-    gap: 20px;
+    gap: 16px;
   }
 
-  /* Menu em linha, centralizado */
   .sidebar .menu {
     flex-direction: row;
     gap: 16px;
@@ -211,12 +218,12 @@ body {
   }
 
   .main-content {
-    margin-left: 0 !important;
+    margin-left: 0;
     width: 100%;
   }
 
   .content {
-    padding: 10px;
+    padding: 15px;
   }
 
   .box,
@@ -226,7 +233,7 @@ body {
 
   h2,
   h3 {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
   }
 
   .btn,
@@ -234,29 +241,29 @@ body {
   input,
   select,
   textarea {
-    font-size: 1rem !important;
+    font-size: 1rem;
   }
 
   .filters {
     flex-direction: column;
+    gap: 10px;
   }
 
   .filters input,
   .filters select,
   .filters button {
-    width: 100% !important;
+    width: 100%;
   }
 
   .modal-box {
     width: 95% !important;
   }
 
-  /* Grids (formulários com várias colunas) viram colunas únicas */
   .grid {
     grid-template-columns: 1fr !important;
   }
 
-  /* ===== TABELAS VIRAM CARDS ===== */
+  /* Tabelas viram cards */
   table,
   thead,
   tbody,
@@ -268,7 +275,7 @@ body {
   }
 
   thead {
-    display: none; /* esconde cabeçalho padrão */
+    display: none;
   }
 
   tr {
@@ -286,7 +293,6 @@ body {
     font-size: 0.95rem;
   }
 
-  /* rótulo de cada campo usando data-label */
   td::before {
     content: attr(data-label);
     font-weight: bold;
@@ -295,7 +301,6 @@ body {
     margin-bottom: 2px;
   }
 
-  /* Grupo de ações em coluna e 100% de largura */
   .actions-group {
     display: flex !important;
     flex-direction: column;

@@ -39,11 +39,13 @@
       align-items: center;
     }
 
-    .filters input, .filters select {
+    .filters input,
+    .filters select {
       flex: 1;
       padding: 10px;
       border-radius: 6px;
       border: 1px solid #ccc;
+      font-size: 0.9rem;
     }
 
     .filters button {
@@ -57,6 +59,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      font-size: 0.9rem;
     }
 
     .filters button:hover {
@@ -141,6 +144,7 @@
       border-radius:6px;
       border:1px solid #ccc;
       box-sizing:border-box;
+      font-size:0.9rem;
     }
 
     .new-appointment button {
@@ -155,6 +159,7 @@
       display:inline-flex;
       align-items:center;
       gap:6px;
+      font-size:0.9rem;
     }
 
     .new-appointment button:hover {
@@ -263,7 +268,7 @@
       <a href="{{ url_for('medicosadmin') }}"><i class="fas fa-user-md"></i></a>
       <a href="#"><i class="fas fa-dollar-sign"></i></a>
       <div class="config">
-        <a href="config.html"><i class="fas fa-cog"></i></a>
+        <a href="#"><i class="fas fa-cog"></i></a>
       </div>
     </nav>
   </aside>
@@ -276,21 +281,10 @@
     </header>
 
     <section class="content">
-
-      <!-- FLASH MESSAGES -->
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="msgwrap">
-            {% for cat, msg in messages %}
-              <div class="msg {{ cat }}">{{ msg }}</div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-
       <!-- 🔍 FILTROS -->
       <div class="section-box">
-        <h3>Buscar Consultas</h3>
+        <h3>Buscar consultas</h3>
+        {% set status_atual = request.args.get('status', '') %}
         <form method="GET" action="{{ url_for('agendaadmin') }}" class="filters">
           <input type="text" name="busca_paciente"
                  placeholder="Buscar paciente (nome ou CPF)"
@@ -300,10 +294,10 @@
                  value="{{ request.args.get('busca_medico', '') }}">
           <select name="status">
             <option value="">Status</option>
-            <option value="solicitada">Solicitada</option>
-            <option value="agendada">Agendada</option>
-            <option value="cancelada">Cancelada</option>
-            <option value="concluida">Concluída</option>
+            <option value="solicitada" {{ 'selected' if status_atual == 'solicitada' else '' }}>Solicitada</option>
+            <option value="agendada"   {{ 'selected' if status_atual == 'agendada' else '' }}>Agendada</option>
+            <option value="cancelada"  {{ 'selected' if status_atual == 'cancelada' else '' }}>Cancelada</option>
+            <option value="concluida"  {{ 'selected' if status_atual == 'concluida' else '' }}>Concluída</option>
           </select>
           <button type="submit">
             <i class="fas fa-search"></i> Filtrar
@@ -338,7 +332,7 @@
                 <td data-label="Tipo">{{ c.tipo }}</td>
                 <td data-label="Status">
                   <span class="status-badge {{ c.status }}">
-                    {{ c.status }}
+                    {{ c.status.capitalize() }}
                   </span>
                 </td>
                 <td data-label="Ações" class="actions">
@@ -391,20 +385,18 @@
 
       <!-- ➕ NOVA CONSULTA -->
       <div class="section-box new-appointment">
-        <h3>Nova Consulta</h3>
+        <h3>Nova consulta</h3>
         <form method="POST" action="{{ url_for('agendaadmin') }}">
-          <!-- Paciente -->
           <label for="paciente_cpf">Paciente</label>
           <input list="pacientes" name="paciente_cpf" id="paciente_cpf"
-                 placeholder="Nome ou CPF do Paciente" required>
+                 placeholder="Nome ou CPF do paciente" required>
           <datalist id="pacientes">
             {% for u in usuarios if u.tipo == 'paciente' %}
               <option value="{{ u.CPF }}">{{ u.nome }} - {{ u.CPF }}</option>
             {% endfor %}
           </datalist>
 
-          <!-- Cargo -->
-          <label for="cargo_admin">Cargo / Especialidade</label>
+          <label for="cargo_admin">Cargo / especialidade</label>
           <select name="cargo" id="cargo_admin" required>
             <option value="">Selecione o cargo...</option>
             {% for cargo in cargos %}
@@ -412,7 +404,6 @@
             {% endfor %}
           </select>
 
-          <!-- Médico -->
           <label for="medico_admin">Médico</label>
           <select name="medico_cpf" id="medico_admin" required>
             <option value="">Selecione um médico...</option>
@@ -423,22 +414,17 @@
             {% endfor %}
           </select>
 
-          <!-- Data -->
           <label for="data_admin">Data</label>
           <input type="date" name="data" id="data_admin" required>
 
-          <!-- Hora -->
           <label for="hora_admin">Hora</label>
           <select name="hora" id="hora_admin" required>
             <option value="">Selecione um horário...</option>
-            <!-- JS preenche com horários livres -->
           </select>
 
-          <!-- Tipo -->
           <label for="tipo">Tipo</label>
           <input type="text" name="tipo" id="tipo" placeholder="Tipo de consulta (Ex: Retorno)">
 
-          <!-- Observações -->
           <label for="observacoes">Observações</label>
           <input type="text" name="observacoes" id="observacoes" placeholder="Observações (opcional)">
 
@@ -586,7 +572,6 @@
       const medicoCpf = medicoSelect.value;
       const data      = dataInput.value;
 
-      // Limpa e adiciona opção padrão
       horaSelect.innerHTML = '';
       const optPadrao = document.createElement('option');
       optPadrao.value = '';
@@ -595,7 +580,6 @@
 
       if (!medicoCpf || !data) return;
 
-      // horários já ocupados pra esse médico + data
       const ocupados = new Set(
         consultasData
           .filter(c =>
@@ -647,7 +631,6 @@
         cargoSelect.addEventListener('change', () => {
           const cargo = cargoSelect.value;
 
-          // limpa médicos
           medicoSelect.innerHTML = '';
           const optPadrao = document.createElement('option');
           optPadrao.value = '';
